@@ -126,3 +126,9 @@ flag as "not installed" cleanup later.
 
 - 2026-10-20: report drafted from P2b live discovery. Next: execute P3-1 (TV).
 - 2026-10-20: **P3-1 executed** — all TV/media removed, versioned `257e19c`.
+- P3-2 executed: UniFi removed; presence on mobile_app companion trackers.
+- P3-3 executed: recorder retention live.
+- **P4**: automation migration to **YAML** (owner decision 2026-10-20; Pyscript
+  prototyped then shelved). Port of `script_engine` built, `ha core check`
+  passes, `sensor.home_status` + helpers + 14 automations active. Pending:
+  full day/night verification vs `script_engine`, then retire legacy components.

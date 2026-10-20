@@ -2,6 +2,23 @@
 
 Chronological log of changes and decisions. Newest at the bottom.
 
+## 2026-10-20 — P4 decision: stick with YAML (Pyscript shelved)
+
+- **Owner decision after prototyping**: go with **YAML** for the automation
+  migration. Evaluated Pyscript as an alternative hidden-logic layer:
+  - Pyscript 2.1.0 installed, config entry loaded (`allow_all_imports: false`),
+    but scripts in `/config/pyscript/` never evaluated (silent watchdog; no
+    `sensor.pyscript_probe` / `sensor.home_status_ps` even with
+    `custom_components.pyscript: debug` logging). Debugging hit diminishing
+    returns.
+  - Shelved the direction. **Removed** `/config/pyscript`,
+    `custom_components/pyscript`, and the `pyscript:` config. System back to the
+    verified YAML state: `ha core check` passes, all P4 automations + helpers +
+    `sensor.home_status` (sleep at night) intact.
+- Takeaway: **YAML is the path.** Simple automations follow `input_*` helpers —
+  helpers are the family/chat surface (app toggles ↔ dashboard ↔ LLM). Complex
+  state logic stays in centralized template/automation files.
+
 ## 2026-10-20 — P3-2: UniFi removed, presence on companion trackers
 
 - **Owner decisions**: `doorman` **kept** (custom-made for the doors, 5 yr, no
