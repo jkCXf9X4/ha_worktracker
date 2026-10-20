@@ -78,6 +78,29 @@ YAML migration is verified over a full day/night; then archive + remove.
 
 ---
 
+## TV/media — REMOVED (executed 2026-10-20)
+
+Full clean slate decision by owner: removed **all TV + media** integrations.
+
+Removed:
+- Config entries: 2× `samsungtv`, 1× `dlna_dmr`, 1× `spotify`, 1× `cast`
+- Entities (registry): `media_player.tv_samsung_8_series_65`,
+  `update.samsungtv_tizen_update`, `switch.samsungtv_tizen_pre_release`,
+  `switch.wake_up_tv`, `device_tracker.tv_samsung`
+- Devices: `ef961764` (Samsung QE65Q8FAM) removed
+- `custom_components/samsungtv_tizen` (legacy component, full delete)
+- `media_player: samsungtv_tizen` platform block in `configuration.yaml`
+- `secrets.yaml`: removed `samsungtv_tizen_host` / `samsungtv_tizen_mac`
+
+Result: no `media_player`, `cast`, `spotify`, `samsungtv`, `dlna` entities remain.
+`ha core check` passes. Pushed to `ha_config` as `257e19c` (Git Exporter).
+
+Leftover: HACS device `SamsungTV Tizen` (`2944bb5e`, no entities) — removal not
+supported via device API; will be dropped when HACS refreshes or on next HACS
+cleanup. HACS repo id `223541049` (`jaruba/ha-samsungtv-tizen`) still listed;
+flag as "not installed" cleanup later.
+
 ## Change log (staged)
 
 - 2026-10-20: report drafted from P2b live discovery. Next: execute P3-1 (TV).
+- 2026-10-20: **P3-1 executed** — all TV/media removed, versioned `257e19c`.

@@ -22,20 +22,20 @@ Last updated: 2026-10-20
 
 **P3 staged cleanup.** Plan drafted: `docs/cleanup_report.md`. Immediate work:
 
-1. Execute **P3-1**: delete 2 orphan `samsungtv` config entries (keep `dlna_dmr`). *(needs sign-off)*
+1. ✅ **P3-1 done**: all TV/media removed (samsungtv×2, dlna_dmr, spotify, cast config entries + legacy samsungtv_tizen component) → `ha_config` `257e19c`.
 2. Await sign-off on UniFi tracked-clients limit + mobile-app phone cull.
 3. Configure recorder (`purge_keep_days`, `exclude_missing_entities`).
 4. Each step = separate commit on `ha_config` (exporter pushes to `/config`).
 
 ## In progress
 
-- (none right now — awaiting sign-off on P3-1)
+- (none right now — awaiting sign-offs)
 
 ## Blocked / waiting on owner
 
-- **Sign-off P3-1**: remove the 2 orphan `samsungtv` config entries? (recommended yes)
 - **Sign-off UniFi**: limit tracked clients to family SSIDs? Which?
 - **Sign-off mobile app**: which of 4 phones (LON-L29, iPhone, Prinsen, ApplePie) are active?
+- **TV/media removed** — re-add TV via UI later if wanted (clean slate). HACS device `SamsungTV Tizen` leftover.
 - **Rotate exposed secrets** (recommended): Yale lock password + GitHub fine-grained PAT were visible in output during P1. Replace PAT in the Git Exporter add-on after creating a new one.
 - Decision on docs sync: mirror `docs/` into `/config/docs/` so the GitHub repo (exporter) versioned them too. (Recommended yes.)
 

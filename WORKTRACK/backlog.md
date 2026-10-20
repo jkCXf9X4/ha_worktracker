@@ -5,10 +5,10 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
 
 ## Cleanup (P3) — from inventory
 
-- [X] #001 **Duplicate/ghost TV entries** — **P2b: verified.** 2 `samsungtv` config
-      entries are orphans (`not_loaded`, no devices/entities); `dlna_dmr` is the
-      live player. Plan P3-1: delete the 2 orphans, keep `dlna_dmr` + unifi tracker.
-      (p1 · phase P3, needs sign-off)
+- [X] #001 **Duplicate/ghost TV entries** — **P2b: verified, P3-1 executed.** All TV
+      + media removed on owner decision: samsungtv×2, dlna_dmr, spotify, cast
+      config entries + legacy `samsungtv_tizen` component. Versioned `257e19c`.
+      (p1 · phase P3)
 - [ ] #002 **UniFi entity bloat** — ~484 unifi entities; old network clients
       (e.g. `pixel_6`, `iphone`, `iphone_hemma` blockers, port/LED switches).
       Prune registry for devices that no longer connect; consider

@@ -2,6 +2,22 @@
 
 Chronological log of changes and decisions. Newest at the bottom.
 
+## 2026-10-20 — P3-1: TV/media removed (clean slate)
+
+- **Owner decision**: remove all TV + media for a clean slate.
+- Deleted config entries: 2× `samsungtv`, `dlna_dmr`, `spotify`, `cast` (REST API).
+- Removed entities (websocket registry): `media_player.tv_samsung_8_series_65`,
+  `update.samsungtv_tizen_update`, `switch.samsungtv_tizen_pre_release`,
+  `switch.wake_up_tv`, `device_tracker.tv_samsung`.
+- Removed device `Samsung QE65Q8FAM`; deleted `custom_components/samsungtv_tizen/`
+  (legacy, 1600+ lines); stripped `media_player: samsungtv_tizen` block from
+  `configuration.yaml`; removed orphaned `samsungtv_tizen_host/mac` secrets.
+- `ha core check` passes; exporter pushed `65acd1f..257e19c main`.
+- Remaining: HACS device `SamsungTV Tizen` + repo id `223541049` flagged for later
+  HACS cleanup (device API can't remove it).
+- Tool lesson: HA websocket commands need **incrementing message `id`** per call
+  (`id_reuse` error otherwise); used `uv` + `websockets` for registry removal.
+
 ## 2026-10-20 — P2b live discovery + cleanup report
 
 - **SSH key auth** — added this machine's `id_ed25519` pubkey to the SSH & Web
