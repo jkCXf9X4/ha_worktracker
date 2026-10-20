@@ -1,0 +1,41 @@
+# Runtime / local-only artifacts — never push these to GitHub
+# (Git Exporter add-on should exclude the same paths)
+
+# Home Assistant core databases
+home-assistant_v2.db
+home-assistant_v2.db-wal
+home-assistant_v2.db-shm
+*.db
+*.db-wal
+*.db-shm
+history/
+
+# Zigbee / ZHA
+zigbee.db
+zigbee.db-wal
+zigbee.db-shm
+
+# Logs
+home-assistant.log*
+*.log
+
+# Secrets & credentials
+secrets.yaml
+!secrets.example.yaml
+
+# UI state & registry (exported selectively by Git Exporter, not raw)
+.storage/
+
+# Cloud, caches, transient
+.cloud/
+deps/
+tts/
+*.tmp
+*.temp
+
+# SSH keys if ever placed here
+.ssh/
+
+# Editor / OS noise
+.DS_Store
+*.swp
