@@ -2,6 +2,16 @@
 
 Chronological log of changes and decisions. Newest at the bottom.
 
+## 2026-10-20 — P3-3 done: recorder live + first purge
+
+- `ha core restart` — recorder config now live (`purge_keep_days: 30`,
+  `purge_interval: 1`, `commit_interval: 5`).
+- First purge verified: `events` table down to **4302 rows**, `states` capped at
+  30 days. Historical long-term `statistics` (5 yr, 1.24 M rows, 58 MB) kept by
+  design (energy/history charts) — bounded growth; on-disk 186 MB dominated by
+  statistics + indexes now that states/events are capped.
+- Tracker updated. Next: sign-offs (UniFi clients, mobile app) + HACS audit.
+
 ## 2026-10-20 — P3-3: recorder retention + **push-only exporter discovery**
 
 - **P3-3 recorder configured** — `configuration.yaml` now has

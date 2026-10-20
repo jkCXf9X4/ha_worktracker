@@ -23,7 +23,7 @@ Last updated: 2026-10-20
 **P3 staged cleanup.** Plan drafted: `docs/cleanup_report.md`. Immediate work:
 
 1. ✅ **P3-1 done**: all TV/media removed (samsungtv×2, dlna_dmr, spotify, cast config entries + legacy samsungtv_tizen component) → `ha_config` `257e19c`.
-2. 🔶 **P3-3 recorder**: written to `/config` (keep 30d, purge daily), exported `47e11f5`. **Pending: `ha core restart` + first purge** (186 MB DB).
+2. ✅ **P3-3 done**: recorder live after core restart — events purge verified (30-day cap), database growth bounded.
 3. Await sign-off on UniFi tracked-clients limit + mobile-app phone cull.
 4. Each step = separate commit on `ha_config` (edit **on the VM**, exporter pushes — it is push-only, not a write channel).
 
