@@ -1,0 +1,4 @@
+[submodule "ha_config"]
+	path = ha_config
+	url = git@github.com:jkCXf9X4/ha_config.git
+	branch = main
