@@ -18,9 +18,11 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       Use recorder `exclude_missing_entities` + registry cleanup to drop unseen
       entities (they still exist in history; verify recorder settings first).
       (p1 · phase P3)
-- [ ] #004 **Legacy custom components** — `doorman`, `script_engine`,
-      `samsungtv_tizen` (hand-installed, no HACS track). After P4 migration is
-      verified, uninstall + archive under `config/deprecated/`.
+- [ ] #004 **Legacy custom components** — `doorman` (dead fork, 2021), `script_engine`
+      (dead, 2023), `samsungtv_tizen` (**removed P3-1**). HACS audit done
+      (2026-10-20): scheduler kept; Yale replacement candidates identified in
+      `docs/cleanup_report.md`. After P4 migration is verified, uninstall +
+      archive under `config/deprecated/`.
       (p1 · phase P3/P4)
 - [ ] #005 **Deprecated `data_template`** in `scripts.yaml`
       (`light_on_with_transition`, `force_light_on_transition`) — rewrite modern

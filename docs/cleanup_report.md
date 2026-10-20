@@ -64,6 +64,24 @@ pro_ap, long_range_sovrum, usg_3p — mostly infra + 2 phones.
 `doorman`, `script_engine`, `samsungtv_tizen` — none HACS-tracked. Hold until P4
 YAML migration is verified over a full day/night; then archive + remove.
 
+### HACS audit (2026-10-20)
+
+| Component | Version | Source | Last activity | Verdict |
+|-----------|---------|--------|---------------|---------|
+| `doorman` (Yale lock) | 0.0.1 | fork of `espenfjo/homeassistant-doorman` | upstream 2019-08; fork 2021-09 | **dead** → replace |
+| `script_engine` | 0.4.0 | `jkCXf9X4/hass_script_engine` (private) | 2023-12 | **dead** → migrate to native YAML (P4) |
+| `samsungtv_tizen` | — | removed this session (P3-1) | — | ✅ removed |
+| `nielsfaber/scheduler-component` | HACS | scheduler | 2026-03 (active) | ✅ keep |
+| `nielsfaber/scheduler-card` | HACS | scheduler-card | active | ✅ keep |
+
+**Doorman replacement candidates** (Yale lock):
+- `jockesyk/homeassistant-yale-doorman-via-smarthub` — active (2025-11), 20★
+- `hiall-fyi/yale_smart_alarm_ce` — new (2026-09), aligned with the newer Yale
+  Smart Alarm Hub
+- Note: current `doorman` is cloud-polling (`iot_class: cloud_polling`) and talks
+  to Yale; replacement affects the 3 locks (`lock.back/main/carport`). Needs
+  owner decision in P4 — verify Yale account/app access before switching.
+
 ---
 
 ## Config hygiene (P4, backlog #005, #007)
