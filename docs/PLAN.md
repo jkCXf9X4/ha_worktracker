@@ -1,12 +1,14 @@
 # Home Assistant — Versioning, Family Chat Agent & Cleanup Plan
 
-Status: **P0 done, discovery done, P1 in progress** (awaiting GitHub repo + PAT + Git Exporter install).
-Repo: `ha_config` — working copy for the build agent; the HA `/config` is mirrored to a private GitHub repo via the Git Exporter add-on.
+Status: **P0 done, P1 done** (config versioned to GitHub). Next: P2b discovery + P3 cleanup.
+Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to GitHub by the **Git Exporter** add-on (files land under `config/` in the repo). Management docs live under `/config/docs/` so the same channel versions them. This workspace folder is drafting only.
 
 **Progress log**
-- P0 — SSH access verified (`hassio@192.168.1.248:2222`, password auth). HA Core 2026.9.2.
+- P0 — SSH access verified. First as `hassio` (read-only); later switched add-on to `ssh.username: root` (intended root shell) for full write + `ha` CLI access. HA Core 2026.9.2, OS 18.2.
+- P1 — Git Exporter add-on installed & pushing to `https://github.com/hkCXf9X4/ha_config` (`main`). Excludes configured: `.storage/`, `secrets.yaml`, `.ssh/`, DBs, logs. `pull_before_push: true` (remote changes flow into `/config`). Config validated (`ha core check`). First commit after fixes: `65acd1f`.
 - P2a — Inventory snapshot: `docs/inventory.md` (958 entities / 211 devices / legacy custom components).
 - Discovery — All automations live in the custom Python **`script_engine`** component. Requirements extracted + YAML migration design: `docs/automation_requirements.md`.
+- Fixes during P1 — moved legacy `samsungtv_tizen` host/mac into `secrets.yaml` (exporter’s IP/MAC check would block commits); rewrote a malformed `secrets.yaml` (trailing-newline bug + bad sed). **Yale password was exposed in plaintext on screen once — rotate it. The GitHub fine-grained PAT was also printed once — rotate it** (replace in the add-on; ~1 min, config keeps working).
 
 ---
 
