@@ -2,6 +2,21 @@
 
 Chronological log of changes and decisions. Newest at the bottom.
 
+## 2026-10-20 — P3-3: recorder retention + **push-only exporter discovery**
+
+- **P3-3 recorder configured** — `configuration.yaml` now has
+  `recorder: purge_keep_days: 30, purge_interval: 1, commit_interval: 5`
+  (was unbounded 186 MB, storing everything forever). Exported as `47e11f5`.
+  **Needs `ha core restart`** to take effect + first purge. DB was 186 MB with
+  leftover history from removed devices (incl. old media entities).
+- **CRITICAL discovery — Git Exporter is push-only.** Tried shipping the recorder
+  config by committing to the GitHub repo directly; the next export *reverted* it
+  (`8478370` → exporter `19d93bc`), because `pull_before_push` only fetches to
+  avoid conflicts, it never applies remote commits to `/config`. Re-applied the
+  change on the VM directly (correct channel). Corrected `SKILL.md`,
+  `docs/PLAN.md` (§11), and this tracker. **All config edits must go on the VM.**
+- Tracker: P3-3 in progress (recorder written, restart pending).
+
 ## 2026-10-20 — P3-1: TV/media removed (clean slate)
 
 - **Owner decision**: remove all TV + media for a clean slate.

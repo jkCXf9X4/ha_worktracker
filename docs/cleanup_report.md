@@ -50,9 +50,12 @@ pro_ap, long_range_sovrum, usg_3p — mostly infra + 2 phones.
 ## Disabled-but-never-purged entities (P3-3, backlog #003)
 
 - 518 integration-disabled + 16 user-disabled + 7 device-disabled = **541**.
-- Recorder not configured (`purge_keep_days` unset) → DB 186 MB kept forever.
-- **Plan:** add `recorder: exclude_missing_entities: [30]` + `purge_keep_days: 30`;
-  run a recorder purge; then clean registry entries that never resolve.
+- Recorder was unconfigured (186 MB, stores everything forever).
+- **P3-3 done:** `recorder: purge_keep_days: 30, purge_interval: 1,
+  commit_interval: 5` written to `/config/configuration.yaml`, exported
+  `47e11f5`. Pending `ha core restart` + first purge.
+  *(Note: `exclude_missing_entities` is NOT a real recorder option — that backlog
+  assumption was wrong; retention handled by `purge_keep_days`.)*
 
 ---
 

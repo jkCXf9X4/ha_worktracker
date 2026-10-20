@@ -64,6 +64,11 @@ mirrored to the GitHub repo).
 - The exporter's **secrets check blocks commits** on IP/MAC/`password:`-type
   lines (patterns shown in logs). Move such values into `secrets.yaml` (excluded
   → not pushed) and reference with `!secret key`.
+- **Git Exporter is PUSH-ONLY from `/config`** — verified 2026-10-20. Even with
+  `pull_before_push: true`, remote commits are only fetched to avoid merge
+  conflicts; they are **NOT** applied to `/config`. A commit pushed straight to
+  the GitHub repo was silently reverted on the next export. **All config edits
+  must go on the VM** (`/config/...` over SSH), then the exporter versions them.
 - Config change loop:
   1. edit files under `/config` over SSH,
   2. `ha core check`,

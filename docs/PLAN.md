@@ -170,10 +170,11 @@ ha_config/ (this repo = build agent workspace)
 
 ## 11. P1 checklist — versioned config via Git Exporter
 
-The add-on is **push-only from `/config`**, but with `repository.pull_before_push: true`
-(default) it pulls newer remote commits into `/config` first — so changes we commit to the
-GitHub repo **do** flow into the VM on the next sync. That's the channel the build agent
-uses to ship config to HA.
+The add-on is **push-only from `/config`** — do NOT rely on `pull_before_push`
+to ship repo commits down into `/config`. Verified 2026-10-20: a commit pushed
+straight to the GitHub repo was silently reverted by the next export. **All
+config edits go on the VM** (`/config/*` over SSH); the exporter then versions
+them. The repo is the read-only mirror / history, not a write channel to HA.
 
 Steps for the user:
 
