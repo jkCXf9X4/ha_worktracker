@@ -24,8 +24,8 @@ Last updated: 2026-10-20
 
 1. ✅ **P3-1 done**: all TV/media removed (samsungtv×2, dlna_dmr, spotify, cast config entries + legacy samsungtv_tizen component) → `ha_config` `257e19c`.
 2. ✅ **P3-3 done**: recorder live after core restart — events purge verified (30-day cap), database growth bounded.
-3. ✅ **HACS audit done**: `doorman` (dead, fork 2021) + `script_engine` (dead, 2023) flagged for replacement in P4; scheduler kept (active); replacement candidates for Yale lock listed (`yale-doorman-via-smarthub`, `yale_smart_alarm_ce`).
-4. Await sign-off on UniFi tracked-clients limit + mobile-app phone cull.
+3. ✅ **P3-2 done**: UniFi integration removed (owner decision). Presence on mobile_app companion trackers only. Live states 433 → 250.
+4. 🔶 **P3-3 in progress**: recorder configured + first purge done; remaining disabled-entity registry cleanup pending.
 5. Each step = separate commit on `ha_config` (edit **on the VM**, exporter pushes — it is push-only, not a write channel).
 
 ## In progress
@@ -34,9 +34,10 @@ Last updated: 2026-10-20
 
 ## Blocked / waiting on owner
 
-- **Sign-off UniFi**: limit tracked clients to family SSIDs? Which?
-- **Sign-off mobile app**: which of 4 phones (LON-L29, iPhone, Prinsen, ApplePie) are active?
-- **TV/media removed** — re-add TV via UI later if wanted (clean slate). HACS device `SamsungTV Tizen` leftover.
+- **No open blockers for P3.** P3-1/P3-2/P3-3 executed.
+- **Owner decisions applied**: TV/media removed (clean slate); UniFi removed;
+  presence on mobile_app companion; `doorman` **kept** (custom, 5 yr stable);
+  `script_engine` to be migrated (P4) — owner's main reason for the switch.
 - **Rotate exposed secrets** (recommended): Yale lock password + GitHub fine-grained PAT were visible in output during P1. Replace PAT in the Git Exporter add-on after creating a new one.
 - Decision on docs sync: mirror `docs/` into `/config/docs/` so the GitHub repo (exporter) versioned them too. (Recommended yes.)
 

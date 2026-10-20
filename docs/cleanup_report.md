@@ -34,16 +34,17 @@ storage edit + restart). No entities/devices attached, so nothing else changes.
 
 - 148 live `device_tracker` entities; 27 source=router, 3 gps; many `unifi_default_*`
   with raw-MAC names and `not_home` state (old/burnt clients).
-- UniFi options storage is empty (`unifi_data` has no `track_clients` tuning) →
-  integration default tracks everything.
-- **Recommend:** limit tracked clients via UniFi integration options
-  (`track_clients` + `ssid_filter` for the two family AP SSIDs), then
-  clean stale `device_tracker.unifi_default_*` entities from the registry.
-- Needs owner sign-off: which devices are still in use (see "at-home" list below).
-
-At-home trackers (13, live): prinsen, tv_samsung, unifi_default_6c:1f…, unifi,
-yale, home_assistent, iphone_hemma, unifi_default_50:eb…, pixel_6_2, usw_flex_mini,
-pro_ap, long_range_sovrum, usg_3p — mostly infra + 2 phones.
+- **P3-2 RESOLVED (2026-10-20):** UniFi integration **removed entirely** on owner
+  decision. Live states dropped **433 → 250** (~183 UniFi entities gone: trackers,
+  switches, sensors).
+- **Presence now runs purely on mobile_app companion trackers** (GPS/SSID-based,
+  zero MAC/IP/SSID config — self-registering phones):
+  - `person.erik` → `device_tracker.huawii` (LON-L29, re-enabled) + `device_tracker.prinsen`
+  - `person.sara` → `device_tracker.iphone_3` (iPhone) + `device_tracker.applepie`
+  - 4 mobile_app trackers are the only device_trackers left.
+- NO YAML/automation referenced UniFi entities (verified) → safe removal.
+- UniFi still available for network monitoring by re-adding the integration (UI)
+  if ever needed; presence stays independent.
 
 ---
 

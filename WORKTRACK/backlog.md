@@ -9,10 +9,9 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       + media removed on owner decision: samsungtv×2, dlna_dmr, spotify, cast
       config entries + legacy `samsungtv_tizen` component. Versioned `257e19c`.
       (p1 · phase P3)
-- [ ] #002 **UniFi entity bloat** — ~484 unifi entities; old network clients
-      (e.g. `pixel_6`, `iphone`, `iphone_hemma` blockers, port/LED switches).
-      Prune registry for devices that no longer connect; consider
-      `unifi` module settings to limit tracked clients.
+- [X] #002 **UniFi entity bloat** — **removed whole integration (owner decision).**
+      Presence migrated to mobile_app companion trackers (GPS/SSID, zero MAC
+      config). Live states 433 → 250. Re-addable via UI if network monitoring wanted.
       (p1 · phase P3)
 - [ ] #003 **535 disabled-but-never-purged entities** — registry + DB bloat.
       Use recorder `exclude_missing_entities` + registry cleanup to drop unseen
@@ -39,8 +38,9 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       custom integration. Migrate to YAML `input_datetime` helpers + automation
       (per automation_requirements.md) so it’s textual/versionable.
       (p1 · phase P4)
-- [ ] #009 **Mobile app device sprawl** — 4 registered phones (LON-L29, iPhone,
-      Prinsen, ApplePie); confirm which are active family phones, drop ghosts.
+- [X] #009 **Mobile app device sprawl** — the 4 mobile_app phones ARE the presence
+      source now (LON-L29/Prinsen→Erik, iPhone/ApplePie→Sara). Kept as-is;
+      presence independent of UniFi.
       (p2 · phase P3)
 - [ ] #010 **Tuya account** — points at the owner’s Gmail; confirm sockets
       (`switch.p1…p11`) are the still-used plugs; consolidate/naming.

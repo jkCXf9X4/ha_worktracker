@@ -2,6 +2,22 @@
 
 Chronological log of changes and decisions. Newest at the bottom.
 
+## 2026-10-20 — P3-2: UniFi removed, presence on companion trackers
+
+- **Owner decisions**: `doorman` **kept** (custom-made for the doors, 5 yr, no
+  errors — no replacement sought); `script_engine` **confirmed as the main build
+  driver** → migrate to native YAML in P4; UniFi not required for presence.
+- **UniFi integration removed** (config entry delete). Presence now runs purely
+  on **mobile_app companion** trackers (GPS/SSID, self-registering, zero MAC/IP/
+  SSID config):
+  - enabled `device_tracker.huawii` (Erik's LON-L29, was user-disabled)
+  - `person.erik` → `huawii` + `prinsen`; `person.sara` → `iphone_3` + `applepie`
+    (websocket `person/update`; enabled via `config/entity_registry/update`)
+  - `ha core check` passes.
+- **Impact**: live states **433 → 250** (−183 UniFi entities: trackers, port/LED
+  switches, sensors). Verified no YAML/automation referenced UniFi entities.
+- Tracker + `docs/cleanup_report.md` updated (#002/#009 → done).
+
 ## 2026-10-20 — P3-3 done: recorder live + first purge
 
 - `ha core restart` — recorder config now live (`purge_keep_days: 30`,
