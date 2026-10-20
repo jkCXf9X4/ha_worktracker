@@ -2,6 +2,25 @@
 
 Chronological log of changes and decisions. Newest at the bottom.
 
+## 2026-10-20 — P2b live discovery + cleanup report
+
+- **SSH key auth** — added this machine's `id_ed25519` pubkey to the SSH & Web
+  Terminal add-on `authorized_keys`; root SSH now works without a password
+  (verified 192.168.1.248:2222). Multiple keys on the add-on; machine key now one.
+- **P2b — long-lived token provisioned** (read-only discovery). Live API
+  snapshot: **436 states**, 148 of them `device_tracker` (UniFi bloat).
+- **TV duplication VERIFIED (P3-1)** — 2 `samsungtv` config entries
+  (`QE65Q8FAM` `5d639020…`, `Samsung 8 Series…` `899d236f…`) are `not_loaded`
+  orphans (no devices, no entities). `dlna_dmr`
+  (`media_player.tv_samsung_8_series_65`) is the one live player.
+  `device_tracker.tv_samsung` (UniFi, MAC `64:1c:b0:8f:59:1f`) = same TV, keep.
+- **P2b — registry refresh** — 965 entities (424 enabled / 541 disabled), 212
+  devices; `disabled_by`: integration 518 / user 16 / device 7.
+- **UniFi bloat quantified (P3-2)** — integration options empty (defaults track
+  everything); many raw-MAC `unifi_default_*` trackers.
+- **`docs/cleanup_report.md` drafted** — TV plan + UniFi + recorder + open
+  sign-off items. Tracker updated (P2b done, P3 in progress).
+
 ## 2026-10-20 — Bootstrap session
 
 - **P0 access** — Installed/configured Advanced SSH & Web Terminal add-on.
