@@ -1,7 +1,12 @@
 # Home Assistant — Versioning, Family Chat Agent & Cleanup Plan
 
-Status: Agreed. Awaiting execution (starts at P0).
+Status: **P0 done, discovery done, P1 in progress** (awaiting GitHub repo + PAT + Git Exporter install).
 Repo: `ha_config` — working copy for the build agent; the HA `/config` is mirrored to a private GitHub repo via the Git Exporter add-on.
+
+**Progress log**
+- P0 — SSH access verified (`hassio@192.168.1.248:2222`, password auth). HA Core 2026.9.2.
+- P2a — Inventory snapshot: `docs/inventory.md` (958 entities / 211 devices / legacy custom components).
+- Discovery — All automations live in the custom Python **`script_engine`** component. Requirements extracted + YAML migration design: `docs/automation_requirements.md`.
 
 ---
 
@@ -151,13 +156,46 @@ ha_config/ (this repo = build agent workspace)
 | Phase | What | Who |
 |-------|------|-----|
 | P0 | Install **SSH & Web Terminal** add-on (port 2222); create a HA **long-lived token** for read discovery. Agent verifies connection + `ha` CLI. | You (2 min) → then build agent |
-| P1 | Versioning bootstrap: create private GitHub repo, `.gitignore`, Git Exporter config (repo URL + PAT in add-on), first push lands. | Build agent |
+| P1 | Versioning bootstrap: create private GitHub repo, `.gitignore`, Git Exporter add-on (repo URL + PAT in add-on), first push lands. Exact steps: §11. | You (5 min) + build agent |
 | P2 | Inventory & discovery of real devices, entities, add-ons, HACS repos, automations. | Build agent |
 | P3 | Cleanup (Balanced), staged + versioned, your sign-off on ambiguous items. | Build agent |
-| P4 | Normalize config into YAML dirs; create schedule helpers + automations wired to real entity IDs. | Build agent |
+| P4 | Normalize config into YAML dirs; create schedule helpers + automations wired to real entity IDs (spec: `automation_requirements.md`). | Build agent |
 | P5 | Family Lovelace dashboard (time pickers / dropdowns per family member). | Build agent |
 | P6 | Chat agent: OpenRouter integration, persona, exposed-device scoping; family test session. | Build agent |
 | P7 | Summaries (`summarize.py`), `ADMIN.md`, `proxmox/backups.md`, verification, final push. | Build agent |
+
+---
+
+## 11. P1 checklist — versioned config via Git Exporter
+
+The add-on is **push-only from `/config`**, but with `repository.pull_before_push: true`
+(default) it pulls newer remote commits into `/config` first — so changes we commit to the
+GitHub repo **do** flow into the VM on the next sync. That's the channel the build agent
+uses to ship config to HA.
+
+Steps for the user:
+
+1. GitHub → **New repository** → name `ha_config`, **Private** (no README/.gitignore — set up in git already). Leave it empty except what the exporter pushes.
+2. GitHub → Settings → Developer settings → **Personal access tokens → Fine-grained** → *Generate new token*: Repository access → **Only select** → `ha_config`; Permissions → **Repository permissions → Contents: Read and write** → generate. (The token only ever lives inside the HA add-on.)
+3. HA → Settings → Add-ons → **⋮ → Repositories** → add `https://github.com/Poeschl-HomeAssistant-Addons/repository` → install **Home Assistant Git Exporter**.
+4. Configure (matches the add-on options schema):
+
+   - `repository.url` → `https://github.com/<you>/ha_config`
+   - `repository.username` → your GitHub username
+   - `repository.password` → paste the fine-grained PAT
+   - `repository.branch_name` → `main`
+   - `pull_before_push` → ON (default)
+   - `export.lovelace / addons` → ON; `esphome / node_red` → OFF (not used)
+   - `check.check_for_secrets` → ON (default, safety net)
+   - **Extend `exclude`** with: `.storage/`, `secrets.yaml`, `.ssh/`, `.cloud/`
+     (defaults already skip `*.db`, `*.log*`, `__pycache__`, `tts/`, `deps/`)
+   - Logging → **show in sidebar: ON** (handy monitoring)
+
+5. **Start** the add-on. It imports current `/config` → GitHub (first push ~1 min).
+6. Confirm: repo root now contains `configuration.yaml`, `automations.yaml`, `groups.yaml`, `custom_components/` etc., and **no** `.storage`, `secrets.yaml`, or `*.db`.
+
+Afterwards I sync this local workspace to the repo (`git fetch`/reset to `origin/main`)
+and start P3/P4 with versioning in place.
 
 ---
 
