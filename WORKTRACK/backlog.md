@@ -60,6 +60,15 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
 
 ## Security / hygiene
 
+- [X] **Tibber removed** (2026-10-21, owner decision): integration was dead
+      (`setup_error`, on Layout OK no re-auth planned). Config entry
+      `098aef23…` deleted via REST, 27 entities purged from registry
+      (`notify.tibber`, `sensor.electricity_price_reparatorsgatan_9`,
+      `sensor.monthly_*_reparatorsgatan_9`, `sensor.tibber_pulse_lilla_huset_*`).
+      Dashboard **Energi** view cleared of the 5 electricity sensors (kept the
+      Tuya `sensor.p4_power` effekt graph). No YAML references existed. Core
+      check passes. Tracked as part of #010's "what drives this house" sweep.
+
 - [ ] #011 **Rotate Yale lock password** — was visible in output during P1.
       Update `secret yale_password` after rotating at the Yale account.
       (p1 · ASAP)

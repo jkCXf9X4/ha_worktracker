@@ -229,3 +229,8 @@ Chronological log of changes and decisions. Newest at the bottom.
   the status/family history graphs + lux line; **Schema** keeps the
   scheduler-card (retitled). **Debug view deleted** — it was a leftover raw
   entity dump. All 38 referenced entities verified live (0 broken).
+- **Tibber integration removed** (owner decision): entry had been `setup_error`
+  (unavailable) — all 27 entities (pulse + Reparatörsgatan 9 electricity) were
+  `unavailable`. Deleted config entry `098aef23…` via REST; entities purged from
+  registry; dashboard Energi view cleared of the 5 electricity sensors (kept
+  `sensor.p4_power` effekt graph). No YAML refs. Core check clean.
