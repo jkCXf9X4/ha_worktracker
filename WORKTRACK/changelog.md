@@ -221,3 +221,11 @@ Chronological log of changes and decisions. Newest at the bottom.
     `scheduler.storage` gets reverted on integration exit — use the service.
   - **HACS audit**: installed = `hacs` + `scheduler` integrations + `scheduler-card`;
     `doorman` is hand-installed (not HACS). No pending updates.
+- **Dashboard rebuilt** (Lovelace "Hem", storage-mode): 6 clean views in place of
+  the ragged Home/Inomhus/Utomhus/Annat/Scheduler/Debug layout. **Översikt** is
+  now the default view (weather, doors, family, home-status); **Belysning**
+  groups indoor lights per room; **Utomhus** path fixed (`lights-indoor` →
+  `utomhus`); **Energi** holds Reparatörsgatan 9 + effekt; **Historik** collects
+  the status/family history graphs + lux line; **Schema** keeps the
+  scheduler-card (retitled). **Debug view deleted** — it was a leftover raw
+  entity dump. All 38 referenced entities verified live (0 broken).

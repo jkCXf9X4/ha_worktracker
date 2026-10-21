@@ -83,6 +83,13 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       (TV `media_player.samsung_tv_remote`, UniFi `device_tracker.unifi_*`,
       purged `sensor.lumi_lumi_weather_*`, purged lights `light.l2/l3/steamlink/
       hunden_on_off/…`). All remaining card refs verified against live states.
+- [X] **Dashboard rebuilt 2026-10-21** (single storage dash "Hem", 6 views):
+      **Översikt** (default — weather/doors/family/home-status), **Belysning**
+      (indoor lights by room), **Utomhus** (path fixed from copy-pasta
+      `lights-indoor` → `utomhus`), **Energi** (Reparatörsgatan 9 + effekt
+      graph), **Historik** (status history graphs), **Schema** (scheduler-card).
+      **Debug view deleted** (was raw entity-dump leftover). 38 card refs, all
+      verified live.
 - [X] **Orphaned Lovelace resources** — removed `/hacsfiles/ha-floorplan/floorplan.js`
       (no plugin installed, no card uses it). Only `scheduler-card.js` remains.
 - [X] **HACS state audit** — installed: `hacs`, `scheduler` integrations +
