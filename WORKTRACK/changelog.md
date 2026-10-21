@@ -234,3 +234,8 @@ Chronological log of changes and decisions. Newest at the bottom.
   `unavailable`. Deleted config entry `098aef23…` via REST; entities purged from
   registry; dashboard Energi view cleared of the 5 electricity sensors (kept
   `sensor.p4_power` effekt graph). No YAML refs. Core check clean.
+- **Carport corridor night dim**: `light.korridor_tak` now stays on at a very low
+  level (default 8, `input_number.night_corridor_brightness`) when
+  `sensor.home_status` → `sleep`, instead of being turned fully off with
+  `group.ceiling_lamps`. Added to the existing `p4_ceiling_off_sleep`
+  automation (`automations/ceiling_lights.yaml`). Exported `d8bad42`.
