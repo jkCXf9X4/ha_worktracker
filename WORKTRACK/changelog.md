@@ -179,3 +179,15 @@ Chronological log of changes and decisions. Newest at the bottom.
 - **Meta:** ZHA ops knowhow → skill (permit-join window gotcha, reset recipes,
   routers-first, remote trigger discovery, entity rename recipe). `#013`
   host-naming backlog item closed.
+- **Isacs room morning fade** (`automations/isac_room.yaml`): daily 06:30
+  slow fade-in (20 min) of `light.isac_tak` — every day incl. weekends (no
+  weekday condition), brightness/time editable via
+  `input_datetime.isac_on_time` + `input_number.isac_brightness`.
+- **Tuya re-authed** — entry `916b4f19…` recovered from `setup_error` to
+  `loaded`, 5 devices / 16 entities online. Resolves the open "outside lights
+  unknown" question: the gazebo/uterum + launcher lights are **Tuya**:
+  `switch.p10_socket` = "Slinga uterum" (available), `switch.p11_socket` =
+  "Julslinga", `switch.p1_socket` (Hörnlampa_vardagsrum), `switch.p2_socket`,
+  `switch.p4_socket` (Bilvärmare) + power sensors; `light.outroom_ballsling`/
+  `light.laundry_nursingtable` are real Tuya sub-entities (unavailable while the
+  plug is offline), NOT stale refs. Skill + workbook updated.

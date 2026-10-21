@@ -100,9 +100,22 @@ mirrored to the GitHub repo).
   (`34:10:f4:ff:fe:fd:43:2b`), IKEA TRETAKT plug `switch.isac_lekstuga`.
   Details: `docs/hue_zha_migration.md`.
 - Integrations: **zha (ConBee II)**, samsungtv (+ dlna_dmr, likely duplicate TV
-  entries), spotify, **tibber (setup_error)**, **tuya (setup_error — zero
-  devices registered)**, unifi (~484 entities, main stale-device source), met,
-  cast, mobile_app x4 phones. **hue integration removed 2026-10-21.**
+  entries), spotify, **tibber (setup_error)** (still pending), met, cast,
+  mobile_app x4 phones. **hue integration removed 2026-10-21.**
+- **Tuya re-authed 2026-10-21** — entry `916b4f19…` (title
+  erik.rosenlund.private@gmail.com) back to `loaded` (was `setup_error`/token
+  expired). 5 Tuya devices, **16 entities**. The outsides/gazebo lights ARE
+  Tuya smart plugs:
+  - `switch.p10_socket` "Slinga uterum" (gazebo light string, dev P10)
+  - `switch.p11_socket` "Julslinga" (Christmas string, P11) — seasonal, off
+  - `switch.p1_socket` "Hörnlampa_vardagsrum" (P1)
+  - `switch.p2_socket` (P2)
+  - `switch.p4_socket` (P4, has power/voltage/energy sensors, "Bilvärmare")
+  - `light.laundry_nursingtable` (P1 sub-entity "Laundry.NursingTable") and
+    `light.outroom_ballsling` (P4 sub-entity "Outroom.BallSling") — real Tuya
+    light entities, **not** stale refs; show `unavailable` when the plug is
+    physically off/absent (P4/P1 seasonal).
+  - Power meters: `sensor.p{4,10,11}_{current,power,voltage,total_energy}`.
 - Registry scale: ~958 entities, 211 devices, 535 disabled-but-not-purged.
 
 ## Automations (YAML — script_engine retired)
