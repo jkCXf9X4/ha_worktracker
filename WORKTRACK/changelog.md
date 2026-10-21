@@ -203,3 +203,21 @@ Chronological log of changes and decisions. Newest at the bottom.
     ghost script entities the old names left behind in the entity registry
     (`script.light_on_with_transition_force`,
     `script.force_light_on_with_transition`).
+- **Dashboard / HACS / Scheduler cleanups.**
+  - **Lovelace stale-ref purge** (storage dash, via `lovelace/config/save`):
+    renames `light.laslampa_on_off`→`switch.laslampa_on_off`, `light.p6`→
+    `switch.p6`; `script_engine.*`→`sensor.home_status` /
+    `input_boolean.light_outside`; dropped 18+ refs to removed integrations
+    (samsung TV media card, UniFi device trackers, purged `lumi_weather` temps,
+    purged lights `l2/l3/steamlink/hunden_on_off/other/…`). Every remaining card
+    ref verified against live states (incl. string-form refs in the Debug view).
+  - **Orphaned resource** `/hacsfiles/ha-floorplan/floorplan.js` removed via
+    `lovelace/resources/delete` (plugin not installed, no card uses it) → 1
+    resource left (`scheduler-card.js`).
+  - **Scheduler #008**: add-on entry `switch.schedule_sovrum` (fbfb04) fully
+    replaced by `automations/sovrum.yaml` (already existed since P4) →
+    `scheduler.remove` service call removed it cleanly
+    (`scheduler.storage` 0 schedules, live entity gone). Learning: hand-editing
+    `scheduler.storage` gets reverted on integration exit — use the service.
+  - **HACS audit**: installed = `hacs` + `scheduler` integrations + `scheduler-card`;
+    `doorman` is hand-installed (not HACS). No pending updates.

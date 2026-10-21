@@ -30,12 +30,14 @@ registry purge, legacy components, scripts rewrite). Details in
 4. ✅ **P3-4 done (2026-10-21)**: disabled-entity registry audit — 0 orphans; remaining 227 disabled are legitimate diagnostics. Legacy components: script_engine archived, samsungtv_tizen removed, doorman kept; ghost script entities removed from registry.
 5. Each step = separate commit on `ha_config` (edit **on the VM**, exporter pushes — it is push-only, not a write channel).
 
-**Next: P3/HACS follow-through + P4/P5 stretch.** HACS add-ons/table cleanups +
-Scheduler Sovrum → YAML (#008) + family dashboard (#015).
+**Next: P4/YAML swirl + P5 dashboard.** P3 (balanced cleanup) done. #008 Scheduler
+migrated to YAML, Lovelace purged of stale refs, floorplan resource dropped,
+HACS audited (all current). Open: #014 docs sync, #015 family dashboard,
+#016 chat agent, #019 morning fade, #020 seasonal grouping.
 
 ## In progress
 
-- (awaiting start after backlog #003/#004/#005 closure — see board P3 complete)
+- (2026-10-21 dashboard/HACS/scheduler cleanup done — see backlog)
 
 ## Blocked / waiting on owner
 

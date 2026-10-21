@@ -41,9 +41,14 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
 - [ ] #007 **Debug logging left on** — `custom_components.script_engine: debug`
       in `configuration.yaml`. Remove/quiet after migration.
       (p2 · phase P4)
-- [ ] #008 **Scheduler "Sovrum" schedule** — currently UI-driven in the Scheduler
-      custom integration. Migrate to YAML `input_datetime` helpers + automation
-      (per automation_requirements.md) so it’s textual/versionable.
+- [X] #008 **Scheduler "Sovrum" schedule** — **DONE 2026-10-21.** The Scheduler
+      add-on entry `fbfb04` (=`switch.schedule_sovrum`) was fully replaced by the
+      YAML automation (`automations/sovrum.yaml`: `p4_sovrum_morning_fade_in` +
+      `p4_sovrum_off`, workdays 06:22 fade-in brightness 200 / 1200 s, 09:36 off,
+      helpers `input_datetime.sovrum_{on,off}_time` + `input_number.sovrum_brightness`).
+      Entry removed via `scheduler.remove` (`storage/scheduler.storage` now 0
+      schedules; live entity gone). Retry note: editing `scheduler.storage` by hand
+      is reverted by the running integration on exit — always use the service.
       (p1 · phase P4)
 - [X] #009 **Mobile app device sprawl** — the 4 mobile_app phones ARE the presence
       source now (LON-L29/Prinsen→Erik, iPhone/ApplePie→Sara). Kept as-is;
@@ -69,14 +74,29 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       `hue_dimmer_isacs` remotes). Remaining raw-named entities are ZHA sub-entities
       (identify/on_level etc.), not worth hosting.
 
+## Dashboard / UI (2026-10-21 cleanup)
+
+- [X] **Lovelace stale-ref purge** — storage-mode dashboard cleaned via
+      `lovelace/config/save`: fixed renames (`light.laslampa_on_off`→`switch.`,
+      `light.p6`→`switch.p6`), `script_engine.*`→`sensor.home_status` /
+      `input_boolean.light_outside`, dropped 18+ refs to removed integrations
+      (TV `media_player.samsung_tv_remote`, UniFi `device_tracker.unifi_*`,
+      purged `sensor.lumi_lumi_weather_*`, purged lights `light.l2/l3/steamlink/
+      hunden_on_off/…`). All remaining card refs verified against live states.
+- [X] **Orphaned Lovelace resources** — removed `/hacsfiles/ha-floorplan/floorplan.js`
+      (no plugin installed, no card uses it). Only `scheduler-card.js` remains.
+- [X] **HACS state audit** — installed: `hacs`, `scheduler` integrations +
+      `scheduler-card` frontend (v1 = HACS-tracked). No pending updates
+      (`update.scheduler_*`/`update.hacs_update` = off). `doorman` is
+      hand-installed, not HACS.
+- [ ] #015 **Family dashboard** (Lovelace) with schedule pickers/dropdowns +
+      per-family-member HA accounts — still open (P5).
+
 ## Features / build
 
 - [ ] #014 **Sync `docs/` + tracker into `/config/docs/`** so the Git Exporter
       versions them on GitHub (single source of truth). *(owner decision)*
       (p2 · next)
-- [ ] #015 **Family dashboard** (Lovelace) with schedule pickers/dropdowns +
-      per-family-member HA accounts.
-      (p1 · phase P5)
 - [ ] #016 **Family chat agent** — OpenRouter conversation integration, persona,
       exposed-device scoping to schedule helpers; later optional local Ollama.
       (p1 · phase P6)
