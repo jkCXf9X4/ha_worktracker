@@ -234,6 +234,21 @@ Chronological log of changes and decisions. Newest at the bottom.
   `unavailable`. Deleted config entry `098aef23…` via REST; entities purged from
   registry; dashboard Energi view cleared of the 5 electricity sensors (kept
   `sensor.p4_power` effekt graph). No YAML refs. Core check clean.
+- **Naming cleanup (full pass)** — all UI-facing names turned into clear Swedish:
+  - **Entities**: `bokhylla_h_light`→"Bokhylla höger", dimmers→"Sovrum/Vardagsrum
+    väggdimmer", `p1_socket`→"Hörnlampa vardagsrum", `p2_socket`→"Uttag p2",
+    `p4_socket`→"Bilvärmaruttag", TRETAKT subs→"Lekstuga barnlås"/"Lekstuga
+    LED-lampa av", `light.laundry_nursingtable`→"Tvättstuga skötbord",
+    `light.outroom_ballsling`→"Uterum bollslings".
+  - **Groups** (YAML): ceiling_lamps→"Taklampor", night_lamps→"Nattlampor".
+  - **Devices**: 5 Tuya (P1/P2/P4/P10/P11) + 17 ZHA devices given meaningful
+    room names (`name_by_user`).
+  - **Automation aliases**: 10 "P4:"-prefixed english aliases → Swedish
+    (e.g. "Nattlampor på när mörkt", "Lås dörrar vid sömn").
+  - **Helpers**: all `input_*` friendly names Swedish (wake/bedtime, Sovrum,
+    Isacs, outside-lux). Scripts → "Ljus på med mjukstart".
+  - `input_boolean.vacation` → "Semester".
+  Exported `0d8ced8`.
 - **Carport corridor night dim**: `light.korridor_tak` now stays on at a very low
   level (default 8, `input_number.night_corridor_brightness`) when
   `sensor.home_status` → `sleep`, instead of being turned fully off with
