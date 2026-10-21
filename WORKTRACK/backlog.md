@@ -13,19 +13,26 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       Presence migrated to mobile_app companion trackers (GPS/SSID, zero MAC
       config). Live states 433 → 250. Re-addable via UI if network monitoring wanted.
       (p1 · phase P3)
-- [ ] #003 **535 disabled-but-never-purged entities** — registry + DB bloat.
-      Use recorder `exclude_missing_entities` + registry cleanup to drop unseen
-      entities (they still exist in history; verify recorder settings first).
+- [X] #003 **535 disabled-but-never-purged entities** — registry + DB bloat.
+      **DONE 2026-10-21:** registry audit — 0 orphans (no entity/device points at a
+      missing config entry; UniFi removal already dropped its ~484). Remaining 227
+      disabled are all legitimate default-disabled diagnostics (zha rssi/lqi,
+      addon version/update sensors, phone sensors, tuya power meters, sun angles).
+      Added `recorder: exclude_missing_entities: true` (core restart, applied).
+      DB 182 MB, 30-day purge already live.
       (p1 · phase P3)
-- [ ] #004 **Legacy custom components** — `doorman` (dead fork, 2021), `script_engine`
-      (dead, 2023), `samsungtv_tizen` (**removed P3-1**). HACS audit done
-      (2026-10-20): scheduler kept; Yale replacement candidates identified in
-      `docs/cleanup_report.md`. After P4 migration is verified, uninstall +
-      archive under `config/deprecated/`.
+- [X] #004 **Legacy custom components** — **DONE 2026-10-21.** `script_engine`
+      archived under `config/deprecated/script_engine_{component,scripts}` +
+      `samsungtv_tizen` removed (P3-1); only stray comments reference script_engine
+      now. `doorman` **kept** (owner decision, 5-yr stable, `doorman: debug`
+      logger intentional). HACS-tracked: `hacs`, `scheduler` (+ scheduler-card).
       (p1 · phase P3/P4)
-- [ ] #005 **Deprecated `data_template`** in `scripts.yaml`
-      (`light_on_with_transition`, `force_light_on_transition`) — rewrite modern
-      (`data:`), keep behaviour identical.
+- [X] #005 **Deprecated `data_template`** in `scripts.yaml` — **DONE 2026-10-20**
+      (commit `1a2fd5e`, needlessly unticked): both scripts rewritten to modern
+      `data:`. 2026-10-21: removed 2 stale ghost script entities left in the
+      registry from the old names
+      (`script.light_on_with_transition_force`,
+      `script.force_light_on_with_transition`).
       (p2 · phase P4)
 - [ ] #006 **Recorder unconfigured** — DB 186 MB and growing with everything
       stored forever. Set `purge_keep_days` (e.g. 30) + `commit_interval`,

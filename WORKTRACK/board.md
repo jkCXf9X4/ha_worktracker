@@ -2,7 +2,7 @@
 
 Snapshot owner: build agent. Update after every working session.
 
-Last updated: 2026-10-20
+Last updated: 2026-10-21
 
 ## Phase state
 
@@ -12,7 +12,7 @@ Last updated: 2026-10-20
 | P1 | Versioning: private GitHub repo + Git Exporter pushing `/config` | ✅ done |
 | P2a | Inventory snapshot (entities/devices/HACS/config entries/schedules) | ✅ done |
 | P2b | Live-state discovery (long-lived token, API) + verify TV duplicates | ✅ done |
-| P3 | Balanced cleanup (HACS/add-ons/dead entities/automation sweep/recorder) | 🔶 in progress |
+| P3 | Balanced cleanup (HACS/add-ons/dead entities/automation sweep/recorder) | ✅ done |
 | P4 | Config normalization + YAML schedule helpers/automations (spec exists) | ⬜ open |
 | P5 | Family Lovelace dashboard + per-user logins | ⬜ open |
 | P6 | Family chat agent (OpenRouter conversation integration + persona + scoping) | ⬜ open |
@@ -20,17 +20,22 @@ Last updated: 2026-10-20
 
 ## Current focus
 
-**P3 staged cleanup.** Plan drafted: `docs/cleanup_report.md`. Immediate work:
+**P3 complete.** Logarithm: P3 staged cleanup done (TV/media, recorder, UniFi,
+registry purge, legacy components, scripts rewrite). Details in
+`docs/cleanup_report.md`. Executed:
 
 1. ✅ **P3-1 done**: all TV/media removed (samsungtv×2, dlna_dmr, spotify, cast config entries + legacy samsungtv_tizen component) → `ha_config` `257e19c`.
-2. ✅ **P3-3 done**: recorder live after core restart — events purge verified (30-day cap), database growth bounded.
+2. ✅ **P3-3 done**: recorder live after core restart — events purge verified (30-day cap), database growth bounded; `exclude_missing_entities: true` added (`de00c06`).
 3. ✅ **P3-2 done**: UniFi integration removed (owner decision). Presence on mobile_app companion trackers only. Live states 433 → 250.
-4. 🔶 **P3-3 in progress**: recorder configured + first purge done; remaining disabled-entity registry cleanup pending.
+4. ✅ **P3-4 done (2026-10-21)**: disabled-entity registry audit — 0 orphans; remaining 227 disabled are legitimate diagnostics. Legacy components: script_engine archived, samsungtv_tizen removed, doorman kept; ghost script entities removed from registry.
 5. Each step = separate commit on `ha_config` (edit **on the VM**, exporter pushes — it is push-only, not a write channel).
+
+**Next: P3/HACS follow-through + P4/P5 stretch.** HACS add-ons/table cleanups +
+Scheduler Sovrum → YAML (#008) + family dashboard (#015).
 
 ## In progress
 
-- (none right now — awaiting sign-offs)
+- (awaiting start after backlog #003/#004/#005 closure — see board P3 complete)
 
 ## Blocked / waiting on owner
 

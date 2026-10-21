@@ -191,3 +191,15 @@ Chronological log of changes and decisions. Newest at the bottom.
   `switch.p4_socket` (Bilvärmare) + power sensors; `light.outroom_ballsling`/
   `light.laundry_nursingtable` are real Tuya sub-entities (unavailable while the
   plug is offline), NOT stale refs. Skill + workbook updated.
+- **Backlog #003/#004/#005 closed (P3 fully done).**
+  - **#003** registry audit → **0 orphan entries** (no entity/device references a
+    missing config entry; UniFi removal had already shed its ~484). Remaining 227
+    disabled are all legit default-disabled diagnostics. Added
+    `recorder.exclude_missing_entities: true` (applies on purge) —
+    `ha_config` `de00c06`, core restarted, 23 automations on.
+  - **#004** verified: `script_engine` archived + `samsungtv_tizen` gone; only
+    doorman kept (owner decision). HACS-tracked: `hacs`, `scheduler`.
+  - **#005** was already done (commit `1a2fd5e`, never ticked); removed the 2
+    ghost script entities the old names left behind in the entity registry
+    (`script.light_on_with_transition_force`,
+    `script.force_light_on_with_transition`).
