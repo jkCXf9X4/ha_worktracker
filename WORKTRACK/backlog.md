@@ -54,9 +54,13 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
 - [ ] #012 **Rotate GitHub fine-grained PAT** — new token; replace in the Git
       Exporter add-on (config keeps working across the swap).
       (p1 · ASAP)
-- [ ] #013 **Host-name the devices nicely** — many Hue/ZHA entities keep raw
+- [x] #013 **Host-name the devices nicely** — many Hue/ZHA entities keep raw
       names (`light.l2`, `light.p6`…). Friendly aliases for dashboards/summary.
-      (p3 · phase P4/P5)
+      (p3 · phase P4/P5) — DONE 2026-10-21 during the Hue→ZHA migration
+      (`light.ute_huvudentre`, `switch.p6`, `switch.laslampa_on_off` "Gästrum
+      fönster", `light.isac_tak`, `light.gastrum_tak`, new `styrbar_lekstuga` +
+      `hue_dimmer_isacs` remotes). Remaining raw-named entities are ZHA sub-entities
+      (identify/on_level etc.), not worth hosting.
 
 ## Features / build
 

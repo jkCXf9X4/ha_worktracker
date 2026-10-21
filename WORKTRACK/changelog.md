@@ -139,3 +139,43 @@ Chronological log of changes and decisions. Newest at the bottom.
   provide the "textual definition".
 - Tracker/docs: kept locally; optionally mirrored into `/config/docs/`
   (owner decision, backlog #014).
+
+## 2026-10-21 — P4 live + Hue→ZHA migration (bulk)
+
+- **P4 YAML go-live; script_engine retired.** 14 YAML automations +
+  `input_*` schedule helpers replaced script_engine fully. The retired component
+  was already dead (`ModuleNotFoundError: No module named 'script_engine'`).
+  Archived → `/config/deprecated/{script_engine_component,script_engine_scripts}`,
+  removed `script_engine:` block + debug logger (that edit briefly introduced
+  `logger: logs: None` — fixed, `doorman: debug` kept). Restart clean, 22
+  automations active.
+- **HA Core upgraded 2026.9.2 → 2026.10.2.** ZHA `assert ieee in
+  device_proxies` startup race is benign/upstream; dimmers poll fine.
+- **ZHA patched:** 5 stale devices purged (4× `lumi.weather` 994d offline +
+  `bokhylla_v` 541d offline) via `zha.remove`.
+- **Hue bridge dead at 192.168.1.128 → migration.** Workbook
+  `docs/hue_zha_migration.md`; logic: re-pair each device to ZHA, rename ZHA
+  entity to its canonical entity_id so `groups.yaml`/automations keep working.
+- **Re-paired on ZHA (renamed to canonical IDs):**
+  `light.entre_hall_tak` (Signify LTW001), `light.korridor_tak` (IKEA,
+  verified by flashing), `light.color_temperature_light_1` (Korridor 2, E14
+  opal), `switch.p6` (innr, Isacs sänglampa), `light.l3_1` (Groventre),
+  `light.l3_2` (Carport ingång), `switch.laslampa_on_off` (P7, now friendly
+  "Gästrum fönster"). Hue dimmer RWL021 on ZHA (`zha_event`).
+- **Outdoor main entrance was already on ZHA** as an unnamed baseline bulb —
+  identified by flash-to-identify, renamed `light.ute_huvudentre` (resolves the
+  long-stale `night_lamps` ref).
+- **New additions** (owner): `switch.isac_lekstuga` (TRETAKT), STYRBAR dimmer
+  (Isacs lekstuga), `light.gastrum_tak` + `light.isac_tak` (IKEA globes, mesh
+  routers), `switch.hobby_rum_fonster` (innr). **STYRBAR + Hue dimmer bound to
+  Isacs room lights** via `platform: device` automations
+  (`automations/{styrbar_lekstuga,hue_dimmer_isacs}.yaml`), working off real
+  `device_automation/trigger/list` subtypes.
+- **Purged** (owner: physically disconnected): P8, P9, P5, L2, L5, Dimmable
+  light 1, + never-existing `kontor_on_off`/`koket_on_off` + dead `bokhylla_v`
+  → cleaned `groups.yaml` (domain fixes `light.p6`→`switch.p6`,
+  `light.laslampa_on_off`→`switch.laslampa_on_off`). Core restarted, groups now
+  resolve to live entities only.
+- **Meta:** ZHA ops knowhow → skill (permit-join window gotcha, reset recipes,
+  routers-first, remote trigger discovery, entity rename recipe). `#013`
+  host-naming backlog item closed.
