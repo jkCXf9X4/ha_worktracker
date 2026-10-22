@@ -20,8 +20,9 @@ Last updated: 2026-10-22
 | P5 | Family Lovelace dashboard + per-user logins | ✅ done |
 | P6 | Family chat agent (OpenRouter + persona + scoping) | ✅ done |
 | P7 | Summaries (`tools/summarize.py`) · `ADMIN.md` · `proxmox/backups.md` · final verification | ✅ done |
+| P8 | Agent config tools (`config_tools` llm-platform: read/glob/write/check/reload, no bash) | ✅ done |
 
-System is in normal operation — **P0–P7 complete, no blockers, secrets
+System is in normal operation — **P0–P8 complete, no blockers, secrets
 rotated.** Build milestones done; remaining items are optional enhancements
 (#019/#020).
 
@@ -74,15 +75,27 @@ rotated.** Build milestones done; remaining items are optional enhancements
 - [ ] #020 **Seasonal night-lamp grouping (later)** — make the `p10/p11/p1`
       Christmas sockets a toggleable group so "night lamps" ≠ "Christmas"
       year-round.
-- [ ] #021 **Agent config tools (P8)** — 🔨 **PLANNED 2026-10-22**: custom
-      component `config_tools` = `llm` platform adding bounded tools to the
-      family chat agent: `read_file`/`glob_files` (everyone) +
-      `write_file`/`check_config`/`reload`/`bind_remote` (admin-context),
-      restricted to reloadable YAML, **no bash**. Design + mechanism verified
-      against HA 2026.10 source (`docs/AGENT_TOOLS.md`). Write/check/reload
-      chain with `.bak` revert; `bind_remote` wires a pre-paired ZHA button to a
-      target entity using registry lookup + live trigger enum (never invents
-      ids). Build pending.
+- [x] #021 **Agent config tools (P8)** — ✅ **DONE + DEPLOYED 2026-10-22**:
+       custom component `config_tools` = `llm` platform adding bounded tools to
+       the family chat agent: `read_file`/`glob_files` (everyone) +
+       `write_file`/`check_config`/`reload` (admin-context), restricted to
+       reloadable YAML, **no bash** (`docs/AGENT_TOOLS.md`).
+       - Component in `/config/custom_components/config_tools/` (manifest,
+         __init__, const, llm, tools); `config_tools:` added to
+         `configuration.yaml`; `ha core check` green; core restarted.
+       - **Verified live via `conversation/process`:** agent called `glob_files`
+         (listed the 9 real automation files) + `read_file` (read scripts.yaml)
+         + `write_file`→check→reload round-trip (file written, automation entity
+         registered for a YAML-list file, test file then removed).
+       - **GOTCHA discovered:** `automation: !include_dir_merge_list` silently
+         drops single-mapping YAML files — automations must be written as YAML
+         *lists*; `check_config` cannot catch it. Runbook rule added.
+       - **Owner decisions:** `bind_remote` dropped ("way too specific"); the 5
+         schedule-writer scripts removed from `scripts.yaml` (generic tools
+         replace them; live `input_*` value changes are now out of the agent's
+         reach — family changes schedules via dashboard pickers).
+       - Cleanup left: stale inert `conversation` exposure entries for the old
+         script entities (harmless; entities don't exist anymore).
 
 ## Standing decisions & conventions (binding for future work)
 

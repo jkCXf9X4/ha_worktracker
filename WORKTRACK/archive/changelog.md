@@ -357,3 +357,40 @@ Chronological log of changes and decisions. Newest at the bottom.
   scripts/configuration/groups.yaml identical between `/config` and the mirror
   submodule. PLAN.md + NEXT.md marked P0–P7 complete; build milestones done
   (remaining #019/#020 are optional enhancements).
+
+## 2026-10-22 — P8 (#021): config_tools agent tools — built, deployed, verified
+
+- **Custom component `config_tools`** (`/config/custom_components/config_tools/`):
+  an **`llm` platform** (verified mechanism in HA 2026.10: `async_get_tools`
+  hook merged into the `assist` API; open_router agent auto-forwards
+  `llm_api.tools` and executes tool calls itself). 5 tools, names prefixed
+  `config_tools__`: `read_file`, `glob_files` (everyone) + `write_file`,
+  `check_config`, `reload` (admin-gated). **No bash** — pure pathlib, write
+  allowlist = `automations/*.yaml`/`scripts.yaml`/`groups.yaml`/`template/*.yaml`,
+  never `configuration.yaml`/`secrets.yaml`/`.storage`/DBs/logs.
+- **write→check→reload with in-memory revert**: writes the file, runs full
+  config check (`async_check_ha_config_file`), reverts on failure, then
+  `automation/script/group/template.reload` on success.
+- **Rollout:** copied component to VM; added `config_tools:` (empty) to
+  `configuration.yaml`; `ha core check` green; **core restart** (required — llm
+  platform lazy-scan only sees top-level components, i.e. at boot).
+- **Verified live through the chat agent** (`conversation/process`): `glob_files`
+  listed the 9 real automation files; `read_file` read scripts.yaml (2 scripts —
+  post-removal state); `write_file` wrote a test automation, entity registered,
+  file then removed. `bind_remote` dropped (owner: "way too specific").
+- **GOTCHA:** `automation: !include_dir_merge_list automations/` **silently
+  drops** single-mapping YAML files — each automations file must be a YAML
+  **list** (`- id:`). `ha core check` passes on a mapping; no error anywhere;
+  the automation just never registers. `write_file` cannot detect this.
+  Documented in skill + AGENT_TOOLS.md; the agent persona must write automations
+  as lists.
+- **Removed 5 schedule-writer scripts** from `scripts.yaml` (`set_family_schedule`,
+  `set_sovrum_schedule`, `set_isac_schedule`, `set_outside_lux`,
+  `set_night_dim`) — owner decision, generic tools replace them. Live `input_*`
+  helper values are now out of the agent's reach; family edits schedules via the
+  dashboard pickers.
+- Exporter pushed `3cd8d6d` then `71e48ed` (backup `*.bak_*` files I created on
+  the VM accidentally got pushed, then deleted again). Live == mirror (sha
+  verified for configuration.yaml, scripts.yaml, all config_tools files).
+  Workspace commits follow. Stale (inert) expose_entity entries for the removed
+  script entities left for a maintenance pass.

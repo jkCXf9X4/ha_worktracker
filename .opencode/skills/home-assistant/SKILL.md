@@ -230,13 +230,22 @@ recreate as HA groups if ever needed.
   model entity-control intents (lights/plugs/locks) + a live-context tool only.
   `input_datetime`/`input_number` helper writes are **not** reachable as
   services — the model fabricates success and nothing changes.
-- Therefore helper writes go through **exposed scripts** (become LLM tools):
+- Therefore helper writes went through **exposed scripts** (became LLM tools):
   5 schedule-writer scripts in `/config/scripts.yaml` — `set_family_schedule`,
   `set_sovrum_schedule`, `set_isac_schedule`, `set_outside_lux`,
   `set_night_dim`. Each: `description` (what/when), per-field `description`s,
   ends with a `stop` action + `response_variable` so the tool returns a real
   confirmation string. Script entity IDs take the slugified **alias**, e.g.
   `script.set_family_wake_bedtime_schedule`.
+  - **Removed 2026-10-22 (owner decision, #021/P8):** those 5 scripts deleted
+    from `scripts.yaml` in favour of the generic `config_tools` component
+    (LLM `llm` platform → read_file/glob_files/write_file/check_config/reload
+    tools). `bind_remote` was dropped as "too specific". **Live `input_*`
+    helper values are now NOT changeable by the agent** (writes target
+    reloadable YAML only); the family changes schedules via the dashboard
+    pickers. The build flow for exposing a *new* script-as-tool still works:
+    script + `description` + `stop`/`response_variable`, then
+    `homeassistant/expose_entity`.
 - **Exposure**: all live entities exposed to `conversation` (all-in) except
   `sensor.time/date/date_time_iso`, `sun.sun`, `zone.home`. WebSocket
   `homeassistant/expose_entity {assistants,entity_ids,should_expose}`;
@@ -255,6 +264,38 @@ recreate as HA groups if ever needed.
   never performed when no tool matches; trust the state, not the reply.
 - `.cache/brands/` icon churn shows up in exporter commits around integration
   loads (model catalogs, brand icons) — benign transient noise.
+
+## config_tools component (P8 — 2026-10-22, built, not yet deployed)
+
+- Adds tools to the **same `assist` API** the OpenRouter agent uses, via a
+  custom-component **`llm` platform**: `custom_components/config_tools/` with
+  `manifest.json` (`"platforms": ["llm"]`), `llm.py` defining
+  `async_get_tools(hass, llm_context, api_id) -> LLMTools | None`
+  (`api_id == llm.LLM_API_ASSIST`). The `llm` integration merges platforms of
+  all loaded integrations; the open_router agent auto-sends `llm_api.tools` to
+  the model and executes tool calls itself (chat_log loop) — no agent code
+  changes needed.
+- Tools (names prefixed `config_tools__`): `read_file`, `glob_files`,
+  `write_file`, `check_config`, `reload` (`automation|script|group|template`).
+  `write_file`/`check_config`/`reload` require an **admin** caller (checked via
+  `llm_context.context.user_id` → `hass.auth.async_get_user().is_admin`).
+- Security: pure `pathlib`; path canonicalized under `config_dir`; write only
+  `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml`; never
+  `configuration.yaml`/`secrets.yaml`/`.storage`/DBs/logs/config_tools itself.
+  write→`async_check_ha_config_file`→reload, reverting in memory on check
+  failure. **No shell** (shell_command/command_line/py_script all live in
+  `configuration.yaml`, never writable).
+- Load: needs `config_tools:` (empty) in `configuration.yaml` + **core restart**
+  — the `llm` platform lazy-scan only sees top-level components at boot.
+- **Deployed + verified 2026-10-22** (all read/glob/write/check/reload tools
+  exercised through the chat agent via `conversation/process`).
+- **GOTCHA (verified 2026-10-22):** `automation: !include_dir_merge_list
+  automations/` silently **drops** a file that is a single YAML mapping — each
+  `automations/*.yaml` must be a **list** (start `- id: ...`). `ha core check`
+  passes on the mapping (valid YAML), reload runs, but the automation never
+  registers — no error anywhere. The chat agent's `write_file` cannot catch
+  this; instruct it to always write automations as YAML lists.
+- Rollout checklist: `docs/AGENT_TOOLS.md` §5.
 
 ## Gotchas / lessons learned
 

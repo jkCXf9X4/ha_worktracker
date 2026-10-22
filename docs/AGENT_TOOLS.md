@@ -1,10 +1,18 @@
 # P8 — Agent config tools (custom component `config_tools`)
 
-Status: **planned 2026-10-22** — design + mechanism verified against HA Core
-2026.10 source. Build pending.
+Status: **DEPLOYED + VERIFIED 2026-10-22** — the 5 generic tools are live on the
+VM (`/config/custom_components/config_tools/`), `config_tools:` added to
+`configuration.yaml`, HA restarted, and the tools exercised end-to-end through
+the chat agent (`glob_files`, `read_file`, `write_file`+reload, revert on
+`check_config` failure). `bind_remote` deliberately **not** built (owner: "way
+too specific"). The 5 schedule-writer scripts were **removed** from
+`scripts.yaml` (owner decision: *Remove them entirely*) — schedule edits now go
+through generic tools + live helper state is out of the agent's reach.
+
+Design (mechanism + rationale) below; rollout executed per §5.
 
 Gives the family chat agent bounded read/write control over the YAML config:
-read/glob (everybody) and write/check/reload/bind_remote (admin-context only),
+read/glob (everybody) and write/check/reload (admin-context only),
 WITHOUT bash access. Registered as a custom component `llm` platform, so tools
 appear in the same `assist` API the OpenRouter agent already uses.
 
@@ -45,12 +53,17 @@ appear in the same `assist` API the OpenRouter agent already uses.
 | No secrets in output | read of `secrets.yaml` impossible by allowlist; redact `!secret`-referenced values never read anyway. |
 | Determinism | `bind_remote` resolves device/trigger from registry + live enum; agent never invents `device_id`/subtypes. |
 
-## 3. Tools (domain `config_tools`)
+## 3. Tools (domain `config_tools`) — implemented
+
+All five below are implemented in `custom_components/config_tools/`:
+`manifest.json` (`platforms: ["llm"]`), `__init__.py` (`CONFIG_SCHEMA =
+cv.empty_config_schema`), `llm.py` (`async_get_tools` returns the five tools
+for `api_id == "assist"`), `tools.py` (pure-Python; no shell, no new deps).
 
 ### `config_tools__read_file`
-- params: `path` (absolute-or-canonical, must resolve under `/config`, allowlist check), `limit_lines?` (default 400).
-- Returns file text (prefix `# <path> — <n> lines`) or an error string.
-- Used for: agent self-audit, config Q&A ("what runs at 06:22?"), and reverting its own writes (`automations/<file>.bak`).
+- params: `path` (relative, must resolve under `/config`, allowlist check).
+- Returns file text (truncated at ~8k chars) or an error string.
+- Used for: agent self-audit, config Q&A ("what runs at 06:22?").
 
 ### `config_tools__glob_files`
 - params: `pattern` (relative glob under `/config`, e.g. `automations/*.yaml`).
@@ -59,9 +72,10 @@ appear in the same `assist` API the OpenRouter agent already uses.
 ### `config_tools__write_file`
 - params: `path`, `content`.
 - Path must be in the write allowlist (canonicalized; reject `..`, symlinks).
-- **Flow:** snapshot existing content → write `.bak` → write target → `ha core check`
-  (`homeassistant.check_config` service, or in-process `config_util.async_check_ha_config_file`)
-  → on errors: **restore `.bak`**, return the error text and confirm nothing changed.
+- **Flow:** snapshot existing content in memory → write target → full config
+  check (`async_check_ha_config_file`)
+  → on errors: **restore the snapshot** (or delete the new file), return the error text
+  and confirm nothing changed.
   On success: `automation.reload`/`script.reload`/`group.reload`/`template.reload`
   per file, return "written + reloaded".
 - Note: `check_config` validates the whole config (not just the target file); report
@@ -78,51 +92,56 @@ appear in the same `assist` API the OpenRouter agent already uses.
 - Explicit separate tool so the agent can reload after a write even if check passed.
 - (script/group/template reload is cheap; automation reload re-reads all files.)
 
-### `config_tools__bind_remote`
-- Purpose: create a device-automation that wires a **pre-paired** ZHA remote button to a target entity — the flagship use-case from the read/write/glob discussion.
-- params (first call): `device_name`, `target_entity_id`, `name` (friendly aliases),
-  `trigger_type`/`trigger_subtype` **optional**.
-- If `trigger_type`/`subtype` omitted → looks up `device_id` by name via device
-  registry and returns the device's **live** trigger list
-  (`homeassistant.components.device_automation::async_get_device_automations(
-  hass, TRIGGER, [device_id])`) so the model can answer with the exact button.
-- Second call (with valid type/subtype): writes a validated automation to
-  `automations/<slug>.yaml` (mirrors the structure of `hue_dimmer_isacs.yaml`),
-  checks, reloads automation, returns result.
-- Guards: unknown device name → helpful error + nearest matches; target entity
-  must exist (entity registry); never fabricates ids.
+### `config_tools__bind_remote` — **NOT BUILT**
+- **Owner decision 2026-10-22: "way too specific" → dropped.** Device-automation
+  authoring can be approximated with `write_file` + the build-agent's
+  `device_automation/trigger/list` recipe in the skill (manual, human-checked).
 
-## 4. Component layout (in `ha_config/custom_components/config_tools/`)
+## 4. Component layout (`ha_config/config/custom_components/config_tools/`)
 
 ```
-manifest.json      # domain, version, "platforms": ["llm"], homeassistant>=2026.10
-__init__.py        # async_setup() -> True; const
+manifest.json      # domain, version, "platforms": ["llm"]
+__init__.py        # async_setup() -> True; CONFIG_SCHEMA = cv.empty_config_schema
+const.py           # DOMAIN = "config_tools"
 llm.py             # async_get_tools -> LLMTools(tools=[...5 tools])
-read_write.py      # path canonicalization, allowlist/denylist, atomic write + .bak
-device_automation.py  # device lookup + trigger enum + YAML template build
+tools.py           # path canonicalization, allowlist/denylist, in-memory revert
 ```
-- Implementation notes: prefer `hass.services.async_call(..., blocking=True)` for
-  services; use stdlib (`pathlib`, `yaml`) — no new runtime deps; all returns are
-  `ToolResult` strings (data=`str`), not dicts, for model simplicity.
+- Implementation notes: pure stdlib (`pathlib`); all returns are `ToolResult`
+  dicts (`data={"result"|"error": ...}`); write flow snapshots to memory (no
+  `.bak` files on disk — reloadable dirs only glob `*.yaml`, and filesystem
+  litter would confuse the exporter).
 - Versioned + exported by Git Exporter (custom_components already under `/config`
   mirror: doorman/hacs/scheduler present).
 
-## 5. Rollout / verification
+## 5. Rollout / verification — EXECUTED 2026-10-22 ✅
 
-1. Author component in `ha_config/custom_components/config_tools/` (this repo).
-2. Copy to VM `/config/custom_components/config_tools/` via tar-over-SSH.
+1. Author component in `ha_config/custom_components/config_tools/` (this repo). ✅
+2. Copy to VM `/config/custom_components/config_tools/` via tar-over-SSH. ✅
 3. Add `config_tools:` to `configuration.yaml` (one-time, build agent, not a tool),
    `ha core check`, then full core restart (reload alone is not enough — `llm`
-   platform lazy-scan happens at boot).
+   platform lazy-scan happens at boot). ✅ (`ha core check` green; restarted.)
 4. Verify: `ha core check` green; `llm` platform loads (log line / `ha core logs`);
    `conversation/process` REST call asking the agent to `glob_files automations/*.yaml`
-   and `read_file scripts.yaml` → confirm actual tool execution in the response tools section.
+   and `read_file scripts.yaml` → confirm actual tool execution in the response tools section. ✅
+   (Agent listed the 9 real automation files and the 2 remaining scripts —
+    `read_file`/`glob_files` confirmed; custom-integration import warning is benign.)
 5. Then a real round-trip: agent writes a *new* no-op automation → check → reload →
-   delete it again (cleanup) → confirm file gone + reloaded.
-6. Then real `bind_remote` carpet-run in review mode (answer trigger list only), pick a
-   button, confirm YAML output by eye before applying.
-7. Update `docs/AUTOMATIONS.md` via `tools/summarize.py`; commit everything;
-   wait for exporter push; verify mirror sha.
+   delete it again (cleanup) → confirm file gone + reloaded. **⚠️ GOTCHA** — the
+   agent's `write_file`+`check_config`+`reload` chain reported success, but the
+   automation entity never registered: the model wrote a single YAML mapping while
+   `automation: !include_dir_merge_list automations/` requires **each file to be a
+   YAML list**. `check_config` passes (valid YAML, silently dropped by the merge),
+   so the write tool cannot catch this by design. Confirmed the file+reload path is
+   correct with a list-format file (entity appeared), then cleaned up the test file.
+   → **Runbook rule:** the chat agent must write `automations/*.yaml` files as YAML
+   *lists* (start with `- id: ...`); a single mapping is silently ignored.
+6. Update `docs/SCHEDULES.md`/`docs/AUTOMATIONS.md` via `tools/summarize.py`;
+   commit everything; wait for exporter push; verify mirror sha. ✅ (Pushed
+   `a57db80..71e48ed`; sha-verified live == mirror for configuration.yaml,
+   scripts.yaml, all config_tools files.)
+7. **Not done:** stale `conversation` exposure entries for the deleted schedule
+   scripts remain (inert — `homeassistant/expose_entity` list still shows them;
+   entities no longer exist). Cosmetic; clear on next maintenance pass if desired.
 
 ## 6. Runbook notes for the agent
 
@@ -130,11 +149,15 @@ device_automation.py  # device lookup + trigger enum + YAML template build
   tool call to those is rejected by design — do not work around it.
 - After any write, verify (`check_config`) and reload before reporting success.
 - If a write would change an existing automation's meaning (not just add new),
-  prefer `bind_remote`/add-branch or ask for owner sign-off — this is config, not chat.
-- Reverting: `read_file` the `.bak` snapshot then `write_file` it back.
+  ask for owner sign-off — this is config, not chat.
+- Reverting your own change: `read_file` the current file, fix the YAML, and
+  `write_file` it back (previous content was restored automatically if the
+  check failed).
 
 ## 7. Out of scope
 
 - No bash, no `shell_command`, no README/`*.md` writes, no `input_*` writes
-  (not reloadable), no editing the component's own files, no ZHA pairing/network.
-- Run of `bind_remote` applies only to automations (never triggers on its own).
+  (not reloadable: edits only take effect on core restart), no editing the
+  component's own files, no ZHA pairing/network.
+- `bind_remote` not built (owner decision); device-automation wiring is a
+  manual build-agent step for now.
