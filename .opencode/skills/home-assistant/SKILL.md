@@ -219,6 +219,43 @@ recreate as HA groups if ever needed.
   IDs must use the switch domain (e.g. `switch.p6`, `switch.laslampa_on_off`);
   groups referencing the old `light.*` IDs then need a ref update.
 
+## Family chat agent (P6 — 2026-10-22, all-in)
+
+- Native **`open_router`** integration (HA 2026.10, built-in), config-flow entry
+  only (API key lives in `.storage` = never versioned). Conversation agent:
+  `conversation.deepseek_deepseek_v4_flash_0731`, model
+  `deepseek/deepseek-v4-flash-0731`, persona in Swedish (schedule + light
+  control), web_search off. Default Assist pipeline switched to it (lang `sv`).
+- **The `assist` LLM API does NOT expose arbitrary services.** It gives the
+  model entity-control intents (lights/plugs/locks) + a live-context tool only.
+  `input_datetime`/`input_number` helper writes are **not** reachable as
+  services — the model fabricates success and nothing changes.
+- Therefore helper writes go through **exposed scripts** (become LLM tools):
+  5 schedule-writer scripts in `/config/scripts.yaml` — `set_family_schedule`,
+  `set_sovrum_schedule`, `set_isac_schedule`, `set_outside_lux`,
+  `set_night_dim`. Each: `description` (what/when), per-field `description`s,
+  ends with a `stop` action + `response_variable` so the tool returns a real
+  confirmation string. Script entity IDs take the slugified **alias**, e.g.
+  `script.set_family_wake_bedtime_schedule`.
+- **Exposure**: all live entities exposed to `conversation` (all-in) except
+  `sensor.time/date/date_time_iso`, `sun.sun`, `zone.home`. WebSocket
+  `homeassistant/expose_entity {assistants,entity_ids,should_expose}`;
+  `homeassistant/expose_entity/list` to verify. Note: only entities where
+  `async_should_expose` is true become LLM tools/index entries.
+- Flow plumbing (all live, no YAML config): config-entry via
+  `POST /api/config/config_entries/flow`; conversation **subentry** via
+  `POST /api/config/config_entries/subentries/flow` with handler
+  `[entry_id, "conversation"]` + `{model, prompt, llm_hass_api:["assist"], web_search}`;
+  subentry/options flow handlers take the **entry_id**, not the domain.
+- Pipeline routing on the VM: `assist_pipeline/pipeline/update` — full payload
+  required (all TTS/STT/wake fields), each with values, or it 400s on
+  "required key not provided".
+- Test: `POST /api/conversation/process {text, agent_id, language}`; verify the
+  side effect via `/api/states/<entity>` — the model often *reports* success it
+  never performed when no tool matches; trust the state, not the reply.
+- `.cache/brands/` icon churn shows up in exporter commits around integration
+  loads (model catalogs, brand icons) — benign transient noise.
+
 ## Gotchas / lessons learned
 
 - **`secrets.yaml` hygiene**: the file had no trailing newline, so appending with
@@ -236,6 +273,12 @@ recreate as HA groups if ever needed.
 - Editing a file that a running instance depends on (configuration.yaml,
   secrets.yaml) — changes apply on next restart/core reload only; existing
   in-memory config keeps working meanwhile.
+- **Jinja inside YAML + heredoc** = easy to lose quotes. A `cat <<'EOF'` heredoc
+  with embedded single-quoted strings (e.g. `['weekday wake ' ~ var]`) mangled
+  the quotes and HA disabled the script with `invalid template`. Fix: build the
+  YAML locally (Write tool) → `yaml.safe_load`+`safe_dump` round-trip to verify
+  → push via tar-over-ssh. Templates with embedded string literals are fragile
+  through shell; prefer `~`-concatenation or separate `variables`.
 
 ## How to grow this skill
 

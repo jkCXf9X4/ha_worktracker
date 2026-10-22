@@ -312,3 +312,29 @@ Chronological log of changes and decisions. Newest at the bottom.
   change). All referenced entities verified live. Users Erik+Sara already have
   accounts + apps; per-user roles deliberately left as-is pending owner input.
   Tracker updated.
+
+## 2026-10-22 — P6 (#016): family chat agent live (OpenRouter, all-in)
+
+- Owner chose **all-in scope**: expose everything, no carve-outs (no cameras;
+  Yale locks can only be locked via HA, not opened). Privacy cost accepted.
+- Added native **`open_router`** integration via config-flow (key in `.storage`,
+  never versioned). Created the **conversation subentry**:
+  `conversation.deepseek_deepseek_v4_flash_0731` — deepseek-v4-flash-0731,
+  Swedish persona (family scheduling + light control), `llm_hass_api: [assist]`,
+  web_search off.
+- **KEY DISCOVERY**: the `assist` LLM API only surfaces entity-control intents
+  (lights/plugs/locks) + a live-context tool — **not arbitrary services**.
+  Assistant calls to `input_datetime`/`input_number` silently fail (model
+  fabricates success). Fixed by adding **5 schedule-writer scripts** in
+  `scripts.yaml` (`set_family_schedule`, `set_sovrum_schedule`,
+  `set_isac_schedule`, `set_outside_lux`, `set_night_dim`), each with
+  description + field descriptions + `stop`/`response_variable`; exposed as
+  LLM tools. Scripts reloaded via `script.reload`.
+- Exposed all ~275 live entities to `conversation` (incl. groups + locks);
+  kept `sensor.time/date/date_time_iso`, `sun.sun`, `zone.home` hidden.
+- **Verified live**: reads presence (Erik hemma, Sara unknown), toggles
+  `light.ute_huvudentre` on, and actually persists `wake_time_weekday` (agent
+  set 07:15 correctly). Switched default Assist pipeline to the DeepSeek agent
+  (lang sv). Test values reset to defaults afterwards.
+- Exporter pushed `a57db80` (scripts.yaml + lovelace_resources + transient
+  `.cache/brands` icon churn from integration load). Tracker + skill updated.

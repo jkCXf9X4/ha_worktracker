@@ -18,11 +18,11 @@ Last updated: 2026-10-22
 | P3 | Balanced cleanup (TV/UniFi/recorder/registry/legacy/Tibber) | ✅ done |
 | P4 | YAML automation migration (script_engine retired, 14 automations + helpers) | ✅ done |
 | P5 | Family Lovelace dashboard + per-user logins | ✅ done |
-| P6 | Family chat agent (OpenRouter + persona + scoping) | ⬜ open |
+| P6 | Family chat agent (OpenRouter + persona + scoping) | ✅ done |
 | P7 | Summaries (`tools/summarize.py`) · `ADMIN.md` · `proxmox/backups.md` · final verification | ⬜ open |
 
-System is in normal operation — P0–P5 complete, no blockers, secrets rotated.
-Next action: **P6 family chat agent (#016)**.
+System is in normal operation — P0–P6 complete, no blockers, secrets rotated.
+Next action: **P7** (#017 summaries · #018 proxmox · final verification).
 
 ## Open work
 
@@ -34,9 +34,27 @@ Next action: **P6 family chat agent (#016)**.
       `scheduler-card.js` resource dropped. Users Erik+Sara already exist w/
       logins+apps; per-user roles **left as-is (owner decision 2026-10-22)** —
       no kid account.
-- [ ] #016 **Family chat agent (P6)** — OpenRouter conversation integration,
+- [x] #016 **Family chat agent (P6)** — OpenRouter conversation integration,
       persona, exposed-device scoping to schedule helpers only (privacy bound);
       local Ollama as an optional later switch.
+      - **owner decision 2026-10-22 (all-in scope):** expose ALL entities +
+        full service access, no carve-outs (no cameras exist; Yale locks can only
+        be locked by HA, not unlocked → small risk). Privacy cost accepted
+        (states go to OpenRouter).
+      - **DONE 2026-10-22:** native `open_router` integration (built into HA
+        2026.10, config-flow, key in `.storage` = never committed). Agent
+        `conversation.deepseek_deepseek_v4_flash_0731` (deepseek v4 flash
+        0731), persona in Swedish (family scheduling + light control), default
+        Assist pipeline switched to it (language sv). **Key discovery:** the
+        `assist` LLM API only surfaces entity-control intents + a live-context
+        tool — NOT arbitrary services. Schedule/helper writes therefore go
+        through 5 exposed LLM-tool scripts (`set_family_schedule`,
+        `set_sovrum_schedule`, `set_isac_schedule`, `set_outside_lux`,
+        `set_night_dim`), each with description + field descriptions +
+        stop/response_variable confirmation. All 281 entities exposed to
+        `conversation` (275 + re-exposed 3 groups + 3 locks; time/date/sun/zone
+        hidden). Verified live: reads presence, toggles lights, writes
+        wake_time helper (agent-initiated value persisted).
 - [ ] #017 **Plain-text summaries (P7)** — `tools/summarize.py` →
       `docs/SCHEDULES.md` / `docs/AUTOMATIONS.md` from the YAML; surfaced to the
       chat agent.
