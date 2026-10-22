@@ -67,8 +67,10 @@ rotated.** Build milestones done; remaining items are optional enhancements
       mode), pre-upgrade manual snapshot, restore steps, verify-always rule;
       `docs/ADMIN.md` = operator how-to (3 backup layers, restore from each,
       common ops, secrets hygiene). Config-only; owner runs on Proxmox.
-- [ ] #019 **Ceiling morning fade (later)** — restore the unused 30-min fade-in
-      (03:00–09:00) from old `script_ceiling_lights_group.py` **if wanted**.
+- [x] #019 **Ceiling morning fade** — 🗑 **WON'T-DO (owner decision
+      2026-10-22):** "remove that one, it will never be relevant". The 30-min
+      03:00–09:00 fade-in from old `script_ceiling_lights_group.py` stays
+      unrealized; current instant ceiling-on behaviour stands.
 - [ ] #020 **Seasonal night-lamp grouping (later)** — make the `p10/p11/p1`
       Christmas sockets a toggleable group so "night lamps" ≠ "Christmas"
       year-round.
