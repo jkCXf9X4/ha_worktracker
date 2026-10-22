@@ -74,6 +74,15 @@ rotated.** Build milestones done; remaining items are optional enhancements
 - [ ] #020 **Seasonal night-lamp grouping (later)** — make the `p10/p11/p1`
       Christmas sockets a toggleable group so "night lamps" ≠ "Christmas"
       year-round.
+- [ ] #021 **Agent config tools (P8)** — 🔨 **PLANNED 2026-10-22**: custom
+      component `config_tools` = `llm` platform adding bounded tools to the
+      family chat agent: `read_file`/`glob_files` (everyone) +
+      `write_file`/`check_config`/`reload`/`bind_remote` (admin-context),
+      restricted to reloadable YAML, **no bash**. Design + mechanism verified
+      against HA 2026.10 source (`docs/AGENT_TOOLS.md`). Write/check/reload
+      chain with `.bak` revert; `bind_remote` wires a pre-paired ZHA button to a
+      target entity using registry lookup + live trigger enum (never invents
+      ids). Build pending.
 
 ## Standing decisions & conventions (binding for future work)
 

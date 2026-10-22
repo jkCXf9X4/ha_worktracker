@@ -20,6 +20,7 @@ Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to 
 - P5 — **done 2026-10-22** (#015): Schema view rebuilt as real family schedule pickers (Familj/Sovrum/Isac/Utomhus & natt on existing `input_*` helpers); stale scheduler-card + resource removed; per-user accounts kept as-is (owner decision). Versioned `ccb0e3e`.
 - P6 — **done 2026-10-22** (#016): family chat agent live — native `open_router` integration (config-flow, key in `.storage`), DeepSeek V4 Flash 0731 agent, Swedish persona, default Assist pipeline switched to it. All-in exposure (owner decision). **Discovery:** the `assist` LLM API only surfaces entity intents + live-context (not arbitrary services) → helper writes go through 5 exposed schedule-writer scripts ending with `stop`/`response_variable`. Verified read/light/schedule-write end-to-end. Versioned `a57db80`.
 - P7 — **done 2026-10-22** (#017/#018): `tools/summarize.py` → `docs/SCHEDULES.md` + `docs/AUTOMATIONS.md` (Swedish, tables, verified vs mirror); `docs/ADMIN.md` (operator how-to: 3 backup layers, restore, ops); `proxmox/backups.md` (vzdump retention crib sheet). Final `ha core check` green; live config == mirror (sha verified).
+- P8 — **planned 2026-10-22** (#021): agent config tools — custom component `config_tools` (an `llm` platform) giving the family chat agent bounded read/write over reloadable YAML + a `bind_remote` device-automation tool, no bash. Mechanism + design verified in HA 2026.10 source; see `docs/AGENT_TOOLS.md`. Build pending.
 
 ---
 
