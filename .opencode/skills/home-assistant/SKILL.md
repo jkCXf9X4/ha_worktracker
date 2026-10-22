@@ -298,6 +298,22 @@ recreate as HA groups if ever needed.
   the chat agent via `conversation/process` — incl. `find_device`→
   `device_triggers`→`write_file` round-trip on `styrbar_lekstuga.yaml`
   (dim_up retargeted then reverted).
+- **Agent knowledge layer (offline, no internet):** the OpenRouter agent prompt
+  (conversation subentry, `.storage`) was extended with a "TEKNISK DEL" block of
+  hard rules + two reference docs it reads via `read_file`:
+  `/config/docs/AGENT_HANDBOOK.md` and `/config/docs/AGENT_EXAMPLES.md`
+  (both exported/versioned). Update the prompt via the **reconfigure flow**:
+  1. `POST /api/config/config_entries/subentries/flow`
+     body `{"handler": ["<entry_id>", "conversation"], "subentry_id": "<subentry_id>"}`
+     → returns `flow_id` (the init form).
+  2. `POST /api/config/config_entries/subentries/flow/{flow_id}` with the flat
+     form fields `{"model","prompt","llm_hass_api":["assist"],"web_search"}` →
+     returns `"reason": "reconfigure_successful"`. Do NOT wrap in `step_id`.
+  (subentries/update websocket only changes `title`, not `data`.)
+- **Verified end-to-end 2026-10-22:** agent self-served a *new* device
+  automation (ZZ test, Hue dimmer short-press right → ute lamp): read handbook,
+  `find_device`, `device_triggers`, wrote a YAML **list** file, `check_config`,
+  `reload` → entity registered; file then removed.
 - **GOTCHA (verified 2026-10-22):** `automation: !include_dir_merge_list
   automations/` silently **drops** a file that is a single YAML mapping — each
   `automations/*.yaml` must be a **list** (start `- id: ...`). `ha core check`

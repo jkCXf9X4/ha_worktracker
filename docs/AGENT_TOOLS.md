@@ -141,6 +141,25 @@ tools.py           # path canonicalization, allowlist/denylist, in-memory revert
 
 ## 5. Rollout / verification — EXECUTED 2026-10-22 ✅
 
+### 5a. Agent knowledge layer (offline, no internet)
+The OpenRouter agent has **no internet access**, so all operational knowledge is
+embedded where it can read it:
+- **System prompt** (conversation subentry in `.storage`) now includes a
+  "TEKNISK DEL" block: tool list + hard rules (YAML-list format, never invent
+  device_id/type/subtype, check+reload after write, never touch
+  configuration.yaml/secrets/.storage/DBs, input_* live values not changeable,
+  ask when ambiguous) + pointers to the two reference docs below.
+- **`/config/docs/AGENT_HANDBOOK.md`** (~6.4 kB): rules, file conventions, key
+  entities/groups, the current automation set, and the per-request workflow.
+- **`/config/docs/AGENT_EXAMPLES.md`** (~3.8 kB): working YAML examples
+  (device-button, time w/ startup grace, dim-up with `mode: restart`, lux
+  numeric_state), the WRONG single-mapping shape, and the find→triggers→write
+  recipe.
+Both docs are readable by the agent via `config_tools__read_file` (under
+`/config/docs/`) and are versioned in `ha_config/config/docs/` (exported).
+
+### 5b. Component rollout
+
 1. Author component in `ha_config/custom_components/config_tools/` (this repo). ✅
 2. Copy to VM `/config/custom_components/config_tools/` via tar-over-SSH. ✅
 3. Add `config_tools:` to `configuration.yaml` (one-time, build agent, not a tool),

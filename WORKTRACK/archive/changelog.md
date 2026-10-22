@@ -419,3 +419,24 @@ Chronological log of changes and decisions. Newest at the bottom.
 - Fixed during live test: `entity_registry.get_entries_for_device_id` lives on
   `registry.entities` (not the registry object) — corrected.
 - Restarted core to reload the `llm` platform; exporter push to follow.
+
+## 2026-10-22 — P8: agent knowledge layer (offline) + end-to-end self-edit verified
+
+- The OpenRouter agent has **no internet**, so embedded its operational
+  knowledge: extended the conversation-subentry system prompt (via the
+  subentry reconfigure flow) with a "TEKNISK DEL" block (tool list, hard
+  rules: YAML-list format, never guess device_id/type/subtype, check+reload
+  after write, denylist, input_* caveat) + pointers to two reference docs.
+- New versioned docs in `/config/docs/` (exported, readable by the agent):
+  `AGENT_HANDBOOK.md` (rules, conventions, key entities, workflows) and
+  `AGENT_EXAMPLES.md` (working YAML examples incl. the WRONG single-mapping
+  shape). Prompt updated via `config_entries/subentries/flow` reconfigure
+  (flat body, no step_id wrapper) → `reconfigure_successful`.
+- **Verified end-to-end:** agent self-served a brand-new device automation
+  (Hue dimmer Isacs short-press → ute lamp): read the handbook,
+  `find_device` → `device_triggers` → wrote `automations/zz_test.yaml` as a
+  proper YAML **list**, `check_config`, `reload` → entity registered
+  (`automation.hue_dimmer_isacs_hoger_korttryck_ute_pa`). Test file removed.
+  (Earlier same-day run had the agent write a *single mapping* under the old
+  prompt — now fixed.)
+- Exporter pushed `ca61c3b` (AGENT_HANDBOOK.md + AGENT_EXAMPLES.md).
