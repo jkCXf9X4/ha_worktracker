@@ -338,3 +338,22 @@ Chronological log of changes and decisions. Newest at the bottom.
   (lang sv). Test values reset to defaults afterwards.
 - Exporter pushed `a57db80` (scripts.yaml + lovelace_resources + transient
   `.cache/brands` icon churn from integration load). Tracker + skill updated.
+
+## 2026-10-22 — P7 (#017/#018): summaries, ops docs, final verification
+
+- **`tools/summarize.py`** (new): parses the `ha_config/config` mirror — all
+  `input_*` helpers + `automations/` YAML → generates
+  `docs/SCHEDULES.md` (helper table + time-triggered automations) and
+  `docs/AUTOMATIONS.md` (full automation reference, Swedish tables). Warns on
+  time triggers referencing unknown helpers. Verified: 15 helpers / 23
+  automations, output matches live config.
+- **`docs/ADMIN.md`** (new): operator how-to — 3 backup layers and how to
+  restore from each, common ops (restart, check, presence, remotes, sensor
+  battery), secrets hygiene, ongoing maintenance.
+- **`proxmox/backups.md`** (new): vzdump retention crib sheet (daily×14 /
+  weekly×4 / monthly×2, snapshot mode, pre-upgrade manual snapshot, restore
+  steps, verify-always). Config-only, owner executes on Proxmox.
+- **Final verification**: `ha core check` green; sha256 of
+  scripts/configuration/groups.yaml identical between `/config` and the mirror
+  submodule. PLAN.md + NEXT.md marked P0–P7 complete; build milestones done
+  (remaining #019/#020 are optional enhancements).

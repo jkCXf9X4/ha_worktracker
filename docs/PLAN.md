@@ -1,8 +1,10 @@
 # Home Assistant — Versioning, Family Chat Agent & Cleanup Plan
 
-Status: **P0–P4 done** (P4 = YAML automation go-live 2026-10-21, `script_engine`
-retired). Next: **P5 family dashboard** (#015). Current state tracked in
-`WORKTRACK/` (live tracker: `NEXT.md`; history: `archive/`).
+Status: **P0–P7 done** (all phases complete 2026-10-22). P4 = YAML automation
+go-live 2026-10-21 (`script_engine` retired), P5 = family dashboard, P6 =
+family chat agent (OpenRouter), P7 = summaries + ops docs + final verification.
+Current state tracked in `WORKTRACK/` (live tracker: `NEXT.md`; history:
+`archive/`).
 Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to GitHub by the **Git Exporter** add-on (files land under `config/` in the repo). Management docs live in this workspace repo (`docs/`, `WORKTRACK/`, pushed to `ha_worktracker`); only `hue_zha_migration.md` is mirrored under `/config/docs/` (full docs-sync declined, backlog #014).
 
 **Progress log**
@@ -15,6 +17,9 @@ Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to 
 - P3 — Cleanup executed 2026-10-20/21: TV/media removed (clean slate), UniFi removed (presence on companion trackers), recorder retention 30 d, registry audit 0 orphans, legacy components archived (`script_engine`) / removed (`samsungtv_tizen`), Tibber removed, dashboard rebuilt (6 views). Details: `WORKTRACK/`.
 - P4 — YAML automation migration **go-live 2026-10-21**: 14 automations + `input_*` helpers replace `script_engine` (retired, archived); Sovrum/Isac schedules on YAML; Hue→ZHA migration (10 devices); Swedish naming pass. `ha core check` passes.
 - Secrets rotation — **done 2026-10-22**: Yale lock password + GitHub fine-grained PAT (exposed during P1) both rotated; new PAT swapped into the Git Exporter add-on. (#011/#012 closed.)
+- P5 — **done 2026-10-22** (#015): Schema view rebuilt as real family schedule pickers (Familj/Sovrum/Isac/Utomhus & natt on existing `input_*` helpers); stale scheduler-card + resource removed; per-user accounts kept as-is (owner decision). Versioned `ccb0e3e`.
+- P6 — **done 2026-10-22** (#016): family chat agent live — native `open_router` integration (config-flow, key in `.storage`), DeepSeek V4 Flash 0731 agent, Swedish persona, default Assist pipeline switched to it. All-in exposure (owner decision). **Discovery:** the `assist` LLM API only surfaces entity intents + live-context (not arbitrary services) → helper writes go through 5 exposed schedule-writer scripts ending with `stop`/`response_variable`. Verified read/light/schedule-write end-to-end. Versioned `a57db80`.
+- P7 — **done 2026-10-22** (#017/#018): `tools/summarize.py` → `docs/SCHEDULES.md` + `docs/AUTOMATIONS.md` (Swedish, tables, verified vs mirror); `docs/ADMIN.md` (operator how-to: 3 backup layers, restore, ops); `proxmox/backups.md` (vzdump retention crib sheet). Final `ha core check` green; live config == mirror (sha verified).
 
 ---
 
@@ -146,8 +151,8 @@ ha_config/ (this repo = build agent workspace)
   docs/
     PLAN.md                 # this document
     ADMIN.md                # operator how-to: restore, rollback, backups
-    SCHEDULES.md            # family-readable schedule reference
-    AUTOMATIONS.md          # automation reference
+    SCHEDULES.md            # family-readable schedule reference (generated)
+    AUTOMATIONS.md          # automation reference (generated)
     inventory.md            # → archived (docs/archive/inventory.md)
     cleanup_report.md       # → archived (docs/archive/cleanup_report.md)
     hue_zha_migration.md    # → archived (docs/archive/); device map in the skill
@@ -169,9 +174,9 @@ ha_config/ (this repo = build agent workspace)
 | ✅ P2 | Inventory & discovery of real devices, entities, add-ons, HACS repos, automations. | Build agent |
 | ✅ P3 | Cleanup (Balanced), staged + versioned, your sign-off on ambiguous items. | Build agent |
 | ✅ P4 | Normalize config into YAML dirs; create schedule helpers + automations wired to real entity IDs (spec: `docs/archive/automation_requirements.md`). | Build agent |
-| P5 | Family Lovelace dashboard (time pickers / dropdowns per family member). | Build agent |
-| P6 | Chat agent: OpenRouter integration, persona, exposed-device scoping; family test session. | Build agent |
-| P7 | Summaries (`summarize.py`), `ADMIN.md`, `proxmox/backups.md`, verification, final push. | Build agent |
+| ✅ P5 | Family Lovelace dashboard (time pickers / dropdowns per family member). | Build agent |
+| ✅ P6 | Chat agent: OpenRouter integration, persona, exposed-device scoping; family test session. | Build agent |
+| ✅ P7 | Summaries (`summarize.py`), `ADMIN.md`, `proxmox/backups.md`, verification, final push. | Build agent |
 
 ---
 

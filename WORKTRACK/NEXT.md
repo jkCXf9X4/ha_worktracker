@@ -19,10 +19,11 @@ Last updated: 2026-10-22
 | P4 | YAML automation migration (script_engine retired, 14 automations + helpers) | ✅ done |
 | P5 | Family Lovelace dashboard + per-user logins | ✅ done |
 | P6 | Family chat agent (OpenRouter + persona + scoping) | ✅ done |
-| P7 | Summaries (`tools/summarize.py`) · `ADMIN.md` · `proxmox/backups.md` · final verification | ⬜ open |
+| P7 | Summaries (`tools/summarize.py`) · `ADMIN.md` · `proxmox/backups.md` · final verification | ✅ done |
 
-System is in normal operation — P0–P6 complete, no blockers, secrets rotated.
-Next action: **P7** (#017 summaries · #018 proxmox · final verification).
+System is in normal operation — **P0–P7 complete, no blockers, secrets
+rotated.** Build milestones done; remaining items are optional enhancements
+(#019/#020).
 
 ## Open work
 
@@ -55,11 +56,17 @@ Next action: **P7** (#017 summaries · #018 proxmox · final verification).
         `conversation` (275 + re-exposed 3 groups + 3 locks; time/date/sun/zone
         hidden). Verified live: reads presence, toggles lights, writes
         wake_time helper (agent-initiated value persisted).
-- [ ] #017 **Plain-text summaries (P7)** — `tools/summarize.py` →
-      `docs/SCHEDULES.md` / `docs/AUTOMATIONS.md` from the YAML; surfaced to the
-      chat agent.
-- [ ] #018 **Proxmox layer (P7)** — `proxmox/backups.md`: vzdump retention crib
-      sheet (config-only; owner runs on Proxmox).
+- [x] #017 **Plain-text summaries (P7)** — DONE 2026-10-22.
+      `tools/summarize.py` parses `input_*` helpers + `automations/` from the
+      `ha_config/config` mirror → `docs/SCHEDULES.md` + `docs/AUTOMATIONS.md`
+      (Swedish, tables, cross-referenced; warns on dangling helper refs).
+      Verified 23 automations / 15 helpers; re-run + commit on config changes.
+      Agent persona references the docs (docs live in this repo, not on VM).
+- [x] #018 **Proxmox layer (P7)** — DONE 2026-10-22. `proxmox/backups.md`:
+      vzdump retention crib sheet (daily×14 / weekly×4 / monthly×2, snapshot
+      mode), pre-upgrade manual snapshot, restore steps, verify-always rule;
+      `docs/ADMIN.md` = operator how-to (3 backup layers, restore from each,
+      common ops, secrets hygiene). Config-only; owner runs on Proxmox.
 - [ ] #019 **Ceiling morning fade (later)** — restore the unused 30-min fade-in
       (03:00–09:00) from old `script_ceiling_lights_group.py` **if wanted**.
 - [ ] #020 **Seasonal night-lamp grouping (later)** — make the `p10/p11/p1`
