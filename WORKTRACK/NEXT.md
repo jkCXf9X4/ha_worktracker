@@ -17,18 +17,23 @@ Last updated: 2026-10-22
 | P2 | Inventory (P2a) + live-state discovery (P2b) | ✅ done |
 | P3 | Balanced cleanup (TV/UniFi/recorder/registry/legacy/Tibber) | ✅ done |
 | P4 | YAML automation migration (script_engine retired, 14 automations + helpers) | ✅ done |
-| **P5** | **Family Lovelace dashboard + per-user logins** | 🔨 next |
+| P5 | Family Lovelace dashboard + per-user logins | ✅ done |
 | P6 | Family chat agent (OpenRouter + persona + scoping) | ⬜ open |
 | P7 | Summaries (`tools/summarize.py`) · `ADMIN.md` · `proxmox/backups.md` · final verification | ⬜ open |
 
-System is in normal operation — P0–P4 complete, no blockers, secrets rotated.
-Next action: **P5**.
+System is in normal operation — P0–P5 complete, no blockers, secrets rotated.
+Next action: **P6 family chat agent (#016)**.
 
 ## Open work
 
-- [ ] #015 **Family dashboard (P5, next)** — Lovelace already has the rebuilt
-      "Hem" dash (Översikt/Belysning/Utomhus/Energi/Historik/Schema). Add
-      per-family-member schedule pickers/dropdowns + per-user HA accounts.
+- [x] #015 **Family dashboard (P5)** — Schema view rebuilt (2026-10-22) into
+      real family schedule pickers: Familj (wake/bedtime weekday+weekend), Sovrum
+      (fade start/off/brightness), Isacs rum (fade start/brightness), Utomhusljus
+      & natt (lux thresholds + night dim) — all on existing `input_*` helpers
+      (no new helpers). Scheduler-card removed from the view + its stale
+      `scheduler-card.js` resource dropped. Users Erik+Sara already exist w/
+      logins+apps; per-user roles **left as-is (owner decision 2026-10-22)** —
+      no kid account.
 - [ ] #016 **Family chat agent (P6)** — OpenRouter conversation integration,
       persona, exposed-device scoping to schedule helpers only (privacy bound);
       local Ollama as an optional later switch.

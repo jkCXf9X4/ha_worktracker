@@ -294,3 +294,21 @@ Chronological log of changes and decisions. Newest at the bottom.
     Exporter add-on (config keeps working across the swap).
 - Tracker updated: board blocked-section secrets bullet removed, done-highlights
   + backlog ticked. Security hygiene items now fully closed.
+## 2026-10-22 — P5 (#015): Schema view rebuilt as family schedule pickers
+
+- Rebuilt the dashboard **Schema** view (storage-mode dash "Hem", via websocket
+  `lovelace/config/save`) into 4 grouped entity cards backed by the existing
+  `input_*` helpers (no new helpers, no automation changes):
+  - **Familj — väckning & läggdags**: wake_time_weekday/weekend,
+    bedtime_weekday/weekend (drives `sensor.home_status` machine).
+  - **Sovrum**: sovrum_on_time, sovrum_off_time, sovrum_brightness.
+  - **Isacs rum**: isac_on_time, isac_brightness.
+  - **Utomhusljus & natt**: outside_light_on/off lux-thresholds,
+    night_corner_brightness.
+- Removed the now-empty `custom:scheduler-card` from the view (Scheduler add-on
+  has 0 schedules since #008) and dropped the orphaned `scheduler-card.js`
+  Lovelace resource (`lovelace/resources/delete`; no card references it anymore).
+- Exporter pushed as `ccb0e3e`; `ha core check` untouched (no config
+  change). All referenced entities verified live. Users Erik+Sara already have
+  accounts + apps; per-user roles deliberately left as-is pending owner input.
+  Tracker updated.
