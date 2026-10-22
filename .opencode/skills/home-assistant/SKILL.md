@@ -208,6 +208,10 @@ recreate as HA groups if ever needed.
 - Validate with `ha core check` (wrap `ha` in `bash -lc`), then
   `POST /api/services/automation/reload`. Automation files load via
   `automation: include_dir_merge_list`.
+- **The chat agent can now do this itself** (v0.2.0): `find_device` by friendly
+  name → `device_id`, `device_triggers` for real type/subtype, `write_file` a
+  YAML-**list** automation, `check_config`, `reload`. Same rule: never guess
+  subtypes — always read them from `device_triggers`.
 - Live examples: `/config/automations/styrbar_lekstuga.yaml` (STYRBAR →
   `switch.isac_lekstuga`), `/config/automations/hue_dimmer_isacs.yaml`
   (RWL021 → `light.isac_tak`).
@@ -276,9 +280,12 @@ recreate as HA groups if ever needed.
   the model and executes tool calls itself (chat_log loop) — no agent code
   changes needed.
 - Tools (names prefixed `config_tools__`): `read_file`, `glob_files`,
-  `write_file`, `check_config`, `reload` (`automation|script|group|template`).
-  `write_file`/`check_config`/`reload` require an **admin** caller (checked via
-  `llm_context.context.user_id` → `hass.auth.async_get_user().is_admin`).
+  `write_file`, `check_config`, `reload` (`automation|script|group|template`)
+  — plus (v0.2.0) **`find_device`** (device-registry lookup by name →
+  `device_id`) and **`device_triggers`** (live `device_automation` trigger
+  type/subtype enum). `write_file`/`check_config`/`reload` require an **admin**
+  caller (checked via `llm_context.context.user_id` →
+  `hass.auth.async_get_user().is_admin`).
 - Security: pure `pathlib`; path canonicalized under `config_dir`; write only
   `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml`; never
   `configuration.yaml`/`secrets.yaml`/`.storage`/DBs/logs/config_tools itself.
@@ -287,8 +294,10 @@ recreate as HA groups if ever needed.
   `configuration.yaml`, never writable).
 - Load: needs `config_tools:` (empty) in `configuration.yaml` + **core restart**
   — the `llm` platform lazy-scan only sees top-level components at boot.
-- **Deployed + verified 2026-10-22** (all read/glob/write/check/reload tools
-  exercised through the chat agent via `conversation/process`).
+- **Deployed + verified 2026-10-22 (v0.2.0):** all 7 tools exercised through
+  the chat agent via `conversation/process` — incl. `find_device`→
+  `device_triggers`→`write_file` round-trip on `styrbar_lekstuga.yaml`
+  (dim_up retargeted then reverted).
 - **GOTCHA (verified 2026-10-22):** `automation: !include_dir_merge_list
   automations/` silently **drops** a file that is a single YAML mapping — each
   `automations/*.yaml` must be a **list** (start `- id: ...`). `ha core check`

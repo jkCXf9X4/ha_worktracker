@@ -1,13 +1,17 @@
 # P8 — Agent config tools (custom component `config_tools`)
 
-Status: **DEPLOYED + VERIFIED 2026-10-22** — the 5 generic tools are live on the
-VM (`/config/custom_components/config_tools/`), `config_tools:` added to
+Status: **DEPLOYED + VERIFIED 2026-10-22 (v0.2.0)** — 7 tools live on the VM
+(`/config/custom_components/config_tools/`), `config_tools:` in
 `configuration.yaml`, HA restarted, and the tools exercised end-to-end through
 the chat agent (`glob_files`, `read_file`, `write_file`+reload, revert on
-`check_config` failure). `bind_remote` deliberately **not** built (owner: "way
-too specific"). The 5 schedule-writer scripts were **removed** from
-`scripts.yaml` (owner decision: *Remove them entirely*) — schedule edits now go
-through generic tools + live helper state is out of the agent's reach.
+`check_config` failure, **`find_device` + `device_triggers`**). The two registry
+tools close the pre-existing gap: the agent can now resolve a friendly device
+name to a `device_id` and enumerate the device's **live** trigger types —
+enabling it to wire a *new* device-automation (and confirm real subtypes before
+editing). `bind_remote` stays deliberately absent (the generic tools now cover
+that flow). The 5 schedule-writer scripts were **removed** from `scripts.yaml`
+(owner decision: *Remove them entirely*) — schedule edits now go through
+generic tools + live helper state is out of the agent's reach.
 
 Design (mechanism + rationale) below; rollout executed per §5.
 
@@ -55,10 +59,11 @@ appear in the same `assist` API the OpenRouter agent already uses.
 
 ## 3. Tools (domain `config_tools`) — implemented
 
-All five below are implemented in `custom_components/config_tools/`:
+All **7** are implemented in `custom_components/config_tools/`:
 `manifest.json` (`platforms: ["llm"]`), `__init__.py` (`CONFIG_SCHEMA =
-cv.empty_config_schema`), `llm.py` (`async_get_tools` returns the five tools
-for `api_id == "assist"`), `tools.py` (pure-Python; no shell, no new deps).
+cv.empty_config_schema`), `llm.py` (`async_get_tools` returns all seven tools
+for `api_id == "assist"`), `tools.py` (pure-Python + HA registry/device-automation
+helpers; no shell, no new deps).
 
 ### `config_tools__read_file`
 - params: `path` (relative, must resolve under `/config`, allowlist check).
@@ -92,10 +97,31 @@ for `api_id == "assist"`), `tools.py` (pure-Python; no shell, no new deps).
 - Explicit separate tool so the agent can reload after a write even if check passed.
 - (script/group/template reload is cheap; automation reload re-reads all files.)
 
-### `config_tools__bind_remote` — **NOT BUILT**
-- **Owner decision 2026-10-22: "way too specific" → dropped.** Device-automation
-  authoring can be approximated with `write_file` + the build-agent's
-  `device_automation/trigger/list` recipe in the skill (manual, human-checked).
+### `config_tools__find_device` — added v0.2.0
+- params: `query` (case-insensitive substring over device name / name_by_user,
+  e.g. "styrbar", "dimmer", "hue").
+- Returns ≤10 matches: `device_id` (the uuid used in `platform: device`
+  triggers), name, manufacturer, model, area, and the `entity_id`s registered
+  to the device. Read-only, everyone.
+- Closes the pre-existing gap: the agent no longer needs an existing
+  automation file to learn a `device_id`.
+
+### `config_tools__device_triggers` — added v0.2.0
+- params: `device_id` (from `find_device`).
+- Returns the device's **live** device-automation triggers via
+  `device_automation.async_get_device_automations(hass, TRIGGER, [device_id])`
+  — the real `domain`/`type`/`subtype` pairs (e.g.
+  `zha` / `remote_button_short_press` / `turn_on`). Read-only, everyone.
+- Hard rule for the agent: **never guess trigger type/subtype; call this tool
+  and use exactly what it returns.** (Same lifecycle source as the old `bind_remote`
+  plan, now exposed as read-only tools + generic `write_file` for the actual edit.)
+
+### `config_tools__bind_remote` — **NOT BUILT** *(superseded by v0.2.0 tools)*
+- **Owner decision 2026-10-22: "way too specific" → dropped.** Its two real
+  capabilities — device_registry lookup + live trigger enum — are now
+  `find_device` + `device_triggers`, and the automation YAML edit itself goes
+  through `write_file` (list-format rule below). No separate binding tool
+  needed.
 
 ## 4. Component layout (`ha_config/config/custom_components/config_tools/`)
 

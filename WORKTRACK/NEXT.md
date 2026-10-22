@@ -87,10 +87,17 @@ rotated.** Build milestones done; remaining items are optional enhancements
          (listed the 9 real automation files) + `read_file` (read scripts.yaml)
          + `write_file`→check→reload round-trip (file written, automation entity
          registered for a YAML-list file, test file then removed).
+       - **v0.2.0 (same day):** added `find_device` (registry lookup by name →
+         `device_id`) + `device_triggers` (live type/subtype enum) — closes the
+         gap the dropped `bind_remote` was meant to fill. Verified live: agent
+         listed STYRBAR device_id + 16 real triggers, then did a full
+         find→triggers→write→check→reload edit of `styrbar_lekstuga.yaml`
+         (retargeted dim_up, then reverted).
        - **GOTCHA discovered:** `automation: !include_dir_merge_list` silently
          drops single-mapping YAML files — automations must be written as YAML
          *lists*; `check_config` cannot catch it. Runbook rule added.
-       - **Owner decisions:** `bind_remote` dropped ("way too specific"); the 5
+       - **Owner decisions:** `bind_remote` dropped ("way too specific"; its two
+         capabilities superseded by `find_device` + `device_triggers`); the 5
          schedule-writer scripts removed from `scripts.yaml` (generic tools
          replace them; live `input_*` value changes are now out of the agent's
          reach — family changes schedules via dashboard pickers).

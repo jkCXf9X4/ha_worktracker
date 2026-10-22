@@ -394,3 +394,28 @@ Chronological log of changes and decisions. Newest at the bottom.
   verified for configuration.yaml, scripts.yaml, all config_tools files).
   Workspace commits follow. Stale (inert) expose_entity entries for the removed
   script entities left for a maintenance pass.
+
+## 2026-10-22 — P8 follow-up: config_tools v0.2.0 — find_device + device_triggers
+
+- Added 2 read-only tools to `config_tools` (component v0.2.0):
+  - **`config_tools__find_device`** — substring lookup over device registry
+    (name/name_by_user) → ≤10 matches with `device_id`, manufacturer, model,
+    area, registered entity_ids. Everyone.
+  - **`config_tools__device_triggers`** — live enum of a device's
+    device-automation triggers via
+    `device_automation.async_get_device_automations(hass, TRIGGER, [device_id])`
+    → real `domain`/`type`/`subtype` pairs. Everyone. Agent rule: never guess
+    subtypes, always read them here.
+- These close the capability gap left when `bind_remote` was dropped: the chat
+  agent can now resolve a friendly device name → device_id and confirm real
+  trigger types, then edit/write the YAML automation with `write_file`
+  (list-format rule applies), `check_config`, `reload`.
+- **Verified live via `conversation/process`:** agent found STYRBAR lekstuga
+  (`a9cc237d301514c8ec2f07ea87d9eaf2`), listed 16 real triggers (incl.
+  `remote_button_long_press`/`dim_up`) and did a full
+  find→triggers→write→check→reload edit of `automations/styrbar_lekstuga.yaml`
+  (dim_up retargeted to the bedroom lamp), which was then **reverted** (sha
+  re-verified live == mirror).
+- Fixed during live test: `entity_registry.get_entries_for_device_id` lives on
+  `registry.entities` (not the registry object) — corrected.
+- Restarted core to reload the `llm` platform; exporter push to follow.
