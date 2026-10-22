@@ -1,14 +1,20 @@
 # Home Assistant — Versioning, Family Chat Agent & Cleanup Plan
 
-Status: **P0 done, P1 done** (config versioned to GitHub). Next: P2b discovery + P3 cleanup.
-Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to GitHub by the **Git Exporter** add-on (files land under `config/` in the repo). Management docs live under `/config/docs/` so the same channel versions them. This workspace folder is drafting only.
+Status: **P0–P4 done** (P4 = YAML automation go-live 2026-10-21, `script_engine`
+retired). Next: **P5 family dashboard** (#015). Current state tracked in
+`WORKTRACK/` (live tracker: `NEXT.md`; history: `archive/`).
+Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to GitHub by the **Git Exporter** add-on (files land under `config/` in the repo). Management docs live in this workspace repo (`docs/`, `WORKTRACK/`, pushed to `ha_worktracker`); only `hue_zha_migration.md` is mirrored under `/config/docs/` (full docs-sync declined, backlog #014).
 
 **Progress log**
 - P0 — SSH access verified. First as `hassio` (read-only); later switched add-on to `ssh.username: root` (intended root shell) for full write + `ha` CLI access. HA Core 2026.9.2, OS 18.2.
 - P1 — Git Exporter add-on installed & pushing to `https://github.com/hkCXf9X4/ha_config` (`main`). Excludes configured: `.storage/`, `secrets.yaml`, `.ssh/`, DBs, logs. `pull_before_push: true` (remote changes flow into `/config`). Config validated (`ha core check`). First commit after fixes: `65acd1f`.
-- P2a — Inventory snapshot: `docs/inventory.md` (958 entities / 211 devices / legacy custom components).
-- Discovery — All automations live in the custom Python **`script_engine`** component. Requirements extracted + YAML migration design: `docs/automation_requirements.md`.
+- P2a — Inventory snapshot: `docs/archive/inventory.md` (958 entities / 211 devices / legacy custom components).
+- Discovery — All automations live in the custom Python **`script_engine`** component. Requirements extracted + YAML migration design: `docs/archive/automation_requirements.md`.
 - Fixes during P1 — moved legacy `samsungtv_tizen` host/mac into `secrets.yaml` (exporter’s IP/MAC check would block commits); rewrote a malformed `secrets.yaml` (trailing-newline bug + bad sed). **Yale password was exposed in plaintext on screen once — rotate it. The GitHub fine-grained PAT was also printed once — rotate it** (replace in the add-on; ~1 min, config keeps working).
+- P2b — Live-state discovery (long-lived token): 436 states; TV duplication + UniFi bloat quantified → `docs/archive/cleanup_report.md`.
+- P3 — Cleanup executed 2026-10-20/21: TV/media removed (clean slate), UniFi removed (presence on companion trackers), recorder retention 30 d, registry audit 0 orphans, legacy components archived (`script_engine`) / removed (`samsungtv_tizen`), Tibber removed, dashboard rebuilt (6 views). Details: `WORKTRACK/`.
+- P4 — YAML automation migration **go-live 2026-10-21**: 14 automations + `input_*` helpers replace `script_engine` (retired, archived); Sovrum/Isac schedules on YAML; Hue→ZHA migration (10 devices); Swedish naming pass. `ha core check` passes.
+- Secrets rotation — **done 2026-10-22**: Yale lock password + GitHub fine-grained PAT (exposed during P1) both rotated; new PAT swapped into the Git Exporter add-on. (#011/#012 closed.)
 
 ---
 
@@ -110,7 +116,7 @@ Live family home, so: report first, stage changes, disable rather than delete, y
 on ambiguous items. All reversible via the git history layer established first.
 
 1. **Inventory breaking change:** dump installed add-ons, HACS repos, entity/device
-   registries, all automations/scripts → `docs/inventory.md`.
+   registries, all automations/scripts → `docs/archive/inventory.md`.
 2. **HACS audit** (biggest rot source): check each custom integration for archived /
    unmaintained repos (GitHub API repo-status check); classify *keep / replace / remove*.
 3. **Add-on audit:** `ha addons list`; flag stale/abandoned add-ons; remove or pin with
@@ -121,7 +127,7 @@ on ambiguous items. All reversible via the git history layer established first.
 5. **Automation/script sweep:** duplicates, broken references, long-disabled rules → move to
    `config/deprecated/` (kept in git history) rather than delete.
 6. **Config hygiene:** deprecated keys, commented-out blocks, stale includes.
-7. `docs/cleanup_report.md` — removed / replaced / needs-your-OK with reasons; each step in a
+7. `docs/archive/cleanup_report.md` — removed / replaced / needs-your-OK with reasons; each step in a
    separate commit.
 
 ---
@@ -142,8 +148,9 @@ ha_config/ (this repo = build agent workspace)
     ADMIN.md                # operator how-to: restore, rollback, backups
     SCHEDULES.md            # family-readable schedule reference
     AUTOMATIONS.md          # automation reference
-    inventory.md            # initial state dump
-    cleanup_report.md       # what was cleaned & why
+    inventory.md            # → archived (docs/archive/inventory.md)
+    cleanup_report.md       # → archived (docs/archive/cleanup_report.md)
+    hue_zha_migration.md    # → archived (docs/archive/); device map in the skill
   tools/
     summarize.py            # generates SCHEDULES.md / AUTOMATIONS.md
     cleanup/                # inspection + classification helpers
@@ -157,11 +164,11 @@ ha_config/ (this repo = build agent workspace)
 
 | Phase | What | Who |
 |-------|------|-----|
-| P0 | Install **SSH & Web Terminal** add-on (port 2222); create a HA **long-lived token** for read discovery. Agent verifies connection + `ha` CLI. | You (2 min) → then build agent |
-| P1 | Versioning bootstrap: create private GitHub repo, `.gitignore`, Git Exporter add-on (repo URL + PAT in add-on), first push lands. Exact steps: §11. | You (5 min) + build agent |
-| P2 | Inventory & discovery of real devices, entities, add-ons, HACS repos, automations. | Build agent |
-| P3 | Cleanup (Balanced), staged + versioned, your sign-off on ambiguous items. | Build agent |
-| P4 | Normalize config into YAML dirs; create schedule helpers + automations wired to real entity IDs (spec: `automation_requirements.md`). | Build agent |
+| ✅ P0 | Install **SSH & Web Terminal** add-on (port 2222); create a HA **long-lived token** for read discovery. Agent verifies connection + `ha` CLI. | You (2 min) → then build agent |
+| ✅ P1 | Versioning bootstrap: create private GitHub repo, `.gitignore`, Git Exporter add-on (repo URL + PAT in add-on), first push lands. Exact steps: §11. | You (5 min) + build agent |
+| ✅ P2 | Inventory & discovery of real devices, entities, add-ons, HACS repos, automations. | Build agent |
+| ✅ P3 | Cleanup (Balanced), staged + versioned, your sign-off on ambiguous items. | Build agent |
+| ✅ P4 | Normalize config into YAML dirs; create schedule helpers + automations wired to real entity IDs (spec: `docs/archive/automation_requirements.md`). | Build agent |
 | P5 | Family Lovelace dashboard (time pickers / dropdowns per family member). | Build agent |
 | P6 | Chat agent: OpenRouter integration, persona, exposed-device scoping; family test session. | Build agent |
 | P7 | Summaries (`summarize.py`), `ADMIN.md`, `proxmox/backups.md`, verification, final push. | Build agent |

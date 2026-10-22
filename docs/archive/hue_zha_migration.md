@@ -1,5 +1,10 @@
 # Hue → ZHA migration workbook
 
+> **Status: COMPLETED 2026-10-21 — kept as reference only.** The device↔canonical
+> entity-ID↔IEEE address map and reset recipes below remain useful for future
+> re-pairing/replacement work. The migration itself is done; all rows are
+> re-paired or confirmed purged.
+
 The Philips Hue bridge (192.168.1.128) is malfunctioning/dead (`setup_retry`,
 unreachable). Scope decision (2026-10-20): **move all Hue Zigbee devices onto
 the HA-managed ZHA network (ConBee II)** and retire the Hue integration.

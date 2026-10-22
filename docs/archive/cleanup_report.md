@@ -1,6 +1,7 @@
 # Cleanup report — HA build (P3, staged)
 
-Status: **draft** — baseline + findings from P2b live discovery (2026-10-20).
+Status: **executed** — P3 cleanup complete (2026-10-20/21) + P4 YAML go-live
+(2026-10-21). Historical record; live state → `WORKTRACK/NEXT.md`.
 Policy: report first, stage changes, **disable-not-delete**, sign-off on ambiguous
 items, every step a separate commit (once versioned). All changes reversible via
 the git history layer.
@@ -52,11 +53,12 @@ storage edit + restart). No entities/devices attached, so nothing else changes.
 
 - 518 integration-disabled + 16 user-disabled + 7 device-disabled = **541**.
 - Recorder was unconfigured (186 MB, stores everything forever).
-- **P3-3 done:** `recorder: purge_keep_days: 30, purge_interval: 1,
-  commit_interval: 5` written to `/config/configuration.yaml`, exported
-  `47e11f5`. Pending `ha core restart` + first purge.
-  *(Note: `exclude_missing_entities` is NOT a real recorder option — that backlog
-  assumption was wrong; retention handled by `purge_keep_days`.)*
+- **P3-3 done:** `recorder: purge_keep_days: 30, commit_interval: 5` written to
+  `/config/configuration.yaml` (`47e11f5`). Restart + first purge done 2026-10-20
+  (events capped, states 30-day). Note: `exclude_missing_entities` is NOT a
+  recorder option — retention is `purge_keep_days` (default `auto_purge` runs
+  nightly). `purge_interval: 1` from `47e11f5` no longer in current config
+  (`0d8ced8`).
 
 ---
 
@@ -92,11 +94,11 @@ YAML migration is verified over a full day/night; then archive + remove.
 
 ---
 
-## Open items needing owner sign-off
+## Owner sign-offs (all resolved 2026-10-20/21)
 
-1. **Remove 2 orphan samsungtv entries?** (recommended yes, no visible downside)
-2. **UniFi tracked-clients limit** — which SSIDs/clients to keep? (family wifi vs IoT)
-3. **Mobile app phones** — LON-L29, iPhone, Prinsen, ApplePie: which 4 are active
+1. ~~Remove 2 orphan samsungtv entries?~~ → **yes** — removed with all TV/media (clean slate).
+2. ~~UniFi tracked-clients limit — which SSIDs/clients to keep?~~ → **n/a** — whole integration removed.
+3. ~~Mobile app phones — which 4 are active~~ → **LON-L29/Prinsen (Erik), iPhone/ApplePie (Sara)** — the only trackers left.
 
 ---
 
@@ -128,7 +130,8 @@ flag as "not installed" cleanup later.
 - 2026-10-20: **P3-1 executed** — all TV/media removed, versioned `257e19c`.
 - P3-2 executed: UniFi removed; presence on mobile_app companion trackers.
 - P3-3 executed: recorder retention live.
-- **P4**: automation migration to **YAML** (owner decision 2026-10-20; Pyscript
-  prototyped then shelved). Port of `script_engine` built, `ha core check`
-  passes, `sensor.home_status` + helpers + 14 automations active. Pending:
-  full day/night verification vs `script_engine`, then retire legacy components.
+- **P4 (2026-10-21)**: automation migration to **YAML** went live (owner decision
+  2026-10-20; Pyscript prototyped then shelved). `script_engine` retired +
+  archived under `config/deprecated/`; 14 automations + `input_*` helpers active,
+  `ha core check` passes, day/night cycle verified. Hue→ZHA migration + naming
+  pass completed the same session.

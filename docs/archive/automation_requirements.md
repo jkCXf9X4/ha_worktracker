@@ -1,5 +1,9 @@
 # Automation requirements & migration design
 
+> **Status: SUPERSEDED 2026-10-21 — archived.** The YAML port described here was
+> implemented and went live (P4); current behaviour lives in the live
+> `automations/` + `input_*` helpers. Kept for reference only.
+
 Extracted (2026-10-20) from the custom Python `script_engine` automations in
 `/config/script_engine/*.py` plus the Scheduler integration and `groups.yaml`.
 

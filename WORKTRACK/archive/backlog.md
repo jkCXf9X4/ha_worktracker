@@ -34,12 +34,17 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       (`script.light_on_with_transition_force`,
       `script.force_light_on_with_transition`).
       (p2 · phase P4)
-- [ ] #006 **Recorder unconfigured** — DB 186 MB and growing with everything
-      stored forever. Set `purge_keep_days` (e.g. 30) + `commit_interval`,
-      `exclude_missing_entities: [30]`; purge statistics.
+- [X] #006 **Recorder unconfigured** — **DONE 2026-10-20 (P3-3).** Recorder live:
+      `purge_keep_days: 30` + `commit_interval: 5` (`ha_config` `47e11f5`), first
+      purge verified (events capped, states 30-day); long-term statistics kept by
+      design. Fact-check 2026-10-22 vs HA docs + versioned config (`0d8ced8`):
+      `exclude_missing_entities` is **not** a recorder option (the `de00c06` add
+      is gone from current config) and `purge_interval: 1` no longer in config —
+      default `auto_purge` covers the nightly purge.
       (p1 · phase P3)
-- [ ] #007 **Debug logging left on** — `custom_components.script_engine: debug`
-      in `configuration.yaml`. Remove/quiet after migration.
+- [X] #007 **Debug logging left on** — **DONE 2026-10-21 (P4 go-live).** The
+      `script_engine: debug` logger was removed with the retired component; only
+      `custom_components.doorman: debug` remains (intentional).
       (p2 · phase P4)
 - [X] #008 **Scheduler "Sovrum" schedule** — **DONE 2026-10-21.** The Scheduler
       add-on entry `fbfb04` (=`switch.schedule_sovrum`) was fully replaced by the
@@ -54,8 +59,11 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       source now (LON-L29/Prinsen→Erik, iPhone/ApplePie→Sara). Kept as-is;
       presence independent of UniFi.
       (p2 · phase P3)
-- [ ] #010 **Tuya account** — points at the owner’s Gmail; confirm sockets
-      (`switch.p1…p11`) are the still-used plugs; consolidate/naming.
+- [X] #010 **Tuya account** — **DONE 2026-10-21.** Re-authed from `setup_error`
+      to `loaded` (entry `916b4f19…`, 5 devices / 16 entities online). Used plugs
+      confirmed + named (`p1_socket` "Hörnlampa vardagsrum", `p4_socket`
+      "Bilvärmaruttag", `p10` "Slinga uterum", `p11` "Julslinga"); dead plugs
+      purged (P8/P9/P5). Account is the owner's Gmail, as expected — nothing further.
       (p2 · phase P3)
 
 ## Security / hygiene
@@ -69,13 +77,15 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
       Tuya `sensor.p4_power` effekt graph). No YAML references existed. Core
       check passes. Tracked as part of #010's "what drives this house" sweep.
 
-- [ ] #011 **Rotate Yale lock password** — was visible in output during P1.
-      Update `secret yale_password` after rotating at the Yale account.
+- [X] #011 **Rotate Yale lock password** — **DONE 2026-10-22.** Was visible in
+      output during P1. Rotated at the Yale account; `secret yale_password`
+      updated on the VM.
       (p1 · ASAP)
-- [ ] #012 **Rotate GitHub fine-grained PAT** — new token; replace in the Git
-      Exporter add-on (config keeps working across the swap).
+- [X] #012 **Rotate GitHub fine-grained PAT** — **DONE 2026-10-22.** New token
+      generated; replaced in the Git Exporter add-on (config keeps working across
+      the swap).
       (p1 · ASAP)
-- [x] #013 **Host-name the devices nicely** — many Hue/ZHA entities keep raw
+- [X] #013 **Host-name the devices nicely** — many Hue/ZHA entities keep raw
       names (`light.l2`, `light.p6`…). Friendly aliases for dashboards/summary.
       (p3 · phase P4/P5) — DONE 2026-10-21 during the Hue→ZHA migration
       (`light.ute_huvudentre`, `switch.p6`, `switch.laslampa_on_off` "Gästrum
@@ -110,8 +120,11 @@ Issue log for the HA build. Newest at the bottom. Sources: `docs/inventory.md`,
 
 ## Features / build
 
-- [ ] #014 **Sync `docs/` + tracker into `/config/docs/`** so the Git Exporter
-      versions them on GitHub (single source of truth). *(owner decision)*
+- [X] #014 **Sync `docs/` + tracker into `/config/docs/`** so the Git Exporter
+      versions them on GitHub (single source of truth). 🗑 **WON'T-DO (owner
+      decision 2026-10-22)** — declined "no for now"; docs/tracker stay
+      versioned in this repo (`ha_worktracker`). `config/docs/hue_zha_migration.md`
+      remains the sole mirrored doc.
       (p2 · next)
 - [ ] #016 **Family chat agent** — OpenRouter conversation integration, persona,
       exposed-device scoping to schedule helpers; later optional local Ollama.

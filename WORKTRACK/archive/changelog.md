@@ -137,8 +137,10 @@ Chronological log of changes and decisions. Newest at the bottom.
   scoping); local Ollama as later option.
 - Family editing: HA app/dashboard over raw git; the git history + summaries
   provide the "textual definition".
-- Tracker/docs: kept locally; optionally mirrored into `/config/docs/`
-  (owner decision, backlog #014).
+- Tracker/docs: kept locally; **not** mirrored into `/config/docs/` — owner
+  declined docs-sync "no for now" (2026-10-22, backlog #014). Docs/tracker live
+  in this repo (`ha_worktracker`); `hue_zha_migration.md` stays the sole doc on
+  the VM.
 
 ## 2026-10-21 — P4 live + Hue→ZHA migration (bulk)
 
@@ -254,3 +256,41 @@ Chronological log of changes and decisions. Newest at the bottom.
   `sensor.home_status` → `sleep`, instead of being turned fully off with
   `group.ceiling_lamps`. Added to the existing `p4_ceiling_off_sleep`
   automation (`automations/ceiling_lights.yaml`). Exported `d8bad42`.
+
+## 2026-10-22 — Tracker cleanup: stale items closed + recorder fact-check
+
+- **Backlog items #006 / #007 / #010 closed** — already executed 2026-10-20/21,
+  never ticked:
+  - **#006 recorder**: live (`purge_keep_days: 30`, `commit_interval: 5`).
+    Fact-check vs versioned config (`0d8ced8`) + HA docs: `exclude_missing_entities`
+    is **not** a recorder option (the `de00c06` add is gone from current config —
+    `docs/cleanup_report.md` note was right) and `purge_interval: 1` no longer in
+    config either; default `auto_purge` covers the nightly purge. No action.
+  - **#007 debug logger**: `script_engine: debug` removed with the P4 go-live;
+    only `doorman: debug` remains (intentional).
+  - **#010 Tuya**: re-auth done, used plugs confirmed + named, dead plugs purged.
+- **Board phase table**: P4 marked ✅ (YAML go-live 2026-10-21); current focus =
+  P5 family dashboard (#015). `docs/PLAN.md` status/progress and
+  `docs/cleanup_report.md` status updated to "executed".
+- **#014 docs sync**: partial — only `config/docs/hue_zha_migration.md` mirrored
+  so far. Still open (owner decision).
+
+## 2026-10-22 — #014 docs-sync declined (won't-do)
+
+- Owner decided **"no for now"**: `docs/` + `WORKTRACK/` stay versioned in this
+  repo (`ha_worktracker`) and are **not** mirrored into `/config/docs/`. No
+  duplication in the config repo. `hue_zha_migration.md` remains the only doc on
+  the VM under `/config/docs/`.
+- Tracker updated: backlog #014 marked 🗑 won't-do; board blocked-section +
+  current-focus cleaned; Decisions section corrected. No open items other than
+  feature phases P5–P7 (#015–#020).
+
+## 2026-10-22 — Exposed secrets rotated (#011/#012 closed)
+
+- Owner rotated both secrets that leaked in tool output during P1:
+  - **#011 Yale lock password** — rotated at the Yale account; `secret
+    yale_password` updated on the VM (`secrets.yaml`, excluded from git).
+  - **#012 GitHub fine-grained PAT** — new token generated; swapped into the Git
+    Exporter add-on (config keeps working across the swap).
+- Tracker updated: board blocked-section secrets bullet removed, done-highlights
+  + backlog ticked. Security hygiene items now fully closed.

@@ -1,30 +1,30 @@
 # Work Tracker — Home Assistant build
 
-The repo's root-level tracker for this **Home Assistant instance** (HAOS VM on
-Proxmox, `192.168.1.248`). This is the planner/status hub used by the owner and the
-build agent between sessions. Docs about *how/what* live in `docs/` (`PLAN.md`,
-`inventory.md`, `automation_requirements.md`). This tracker answers *where we
-are* and *what's next*.
+The repo's tracker for this **Home Assistant instance** (HAOS VM on Proxmox,
+`192.168.1.248`). The build ran phases P0–P4 (all done 2026-10-21) and the system
+is in normal operation. Docs about *how/what* live in `docs/`; ops how-to in the
+skill (`.opencode/skills/home-assistant`). This tracker answers *where we are*
+and *what's next*.
 
 ## Files
 
-| File | Purpose |
+| Path | Purpose |
 |------|---------|
-| `WORKTRACK/board.md`   | Status board: phase state, current focus, next actions |
-| `WORKTRACK/backlog.md` | Numbered open tasks: bugs/rot found + ideas/wishes |
-| `WORKTRACK/changelog.md` | Chronological log of what was done & decisions made |
+| `WORKTRACK/NEXT.md` | Living, forward-looking tracker: open work (#015–#020), phase state, standing decisions |
+| `WORKTRACK/archive/board.md` | Historical status board (frozen 2026-10-22) |
+| `WORKTRACK/archive/backlog.md` | Historical issue log (frozen 2026-10-22; open items moved to NEXT.md) |
+| `WORKTRACK/archive/changelog.md` | Chronological log of changes/decisions — **still appended to** |
 
 ## How items flow
 
-1. A task/issue/idea gets logged in `backlog.md` (highest number = newest).
-2. When picked up, move it to `board.md` under "In progress" with the phase label.
-3. When done, record it in `changelog.md` and tick it off in `backlog.md` /
-   `board.md` (keep the entry, just mark ✅).
+1. A new task/issue/idea is logged in `NEXT.md` under "Open work" (highest number = newest).
+2. When picked up, promote it to the current focus at the top of NEXT.md.
+3. When done, append the result to `archive/changelog.md` and tick it off in NEXT.md (keep the entry, mark ✅).
 
 ## Backlog item format
 
 ```
-- [ ] #N **Title** — one-line description (context: phase / priority)
+- [ ] #N **Title** — description (context: phase / priority)
       - notes: extra detail, options, acceptance criteria
 ```
 

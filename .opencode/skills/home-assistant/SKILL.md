@@ -1,14 +1,15 @@
 ---
 name: home-assistant
-description: Living operational knowledge base for the rosenlund home Home Assistant setup (HAOS VM at 192.168.1.248, /config, YAML automations, Git Exporter versioning, UniFi/ZHA/Tuya/Tibber). Use whenever connecting to this HA instance, reading or editing its config/entities/automations/schedules, or working on the versioning + cleanup + migration build. Append new learnings here as they are discovered.
+description: Living operational knowledge base for the rosenlund home Home Assistant setup (HAOS VM at 192.168.1.248, /config, YAML automations, Git Exporter versioning, ZHA/Tuya). Use whenever connecting to this HA instance, reading or editing its config/entities/automations/schedules, or working on the versioning + cleanup + migration build. Append new learnings here as they are discovered.
 ---
 
 # Home Assistant — operational knowledge
 
 This is a living reference, maintained while working on the build. Good places
-for deeper context: `docs/PLAN.md`, `docs/inventory.md`,
-`docs/automation_requirements.md` (kept in the HA config at `/config/docs/*` and
-mirrored to the GitHub repo).
+for deeper context: `docs/PLAN.md` (the plan), `docs/archive/` (historical
+baseline/spec/workbooks — incl. `hue_zha_migration.md`), and `WORKTRACK/NEXT.md`
+(the live work tracker). Only `hue_zha_migration.md` is mirrored to the HA
+config at `/config/docs/`.
 
 ## Accessing the instance
 
@@ -51,10 +52,11 @@ mirrored to the GitHub repo).
 - Install add-ons present: Advanced SSH & Web Terminal (`a0d7b954_ssh`), Samba
   share (`core_samba`), File editor (`core_configurator`), Home Assistant Git
   Exporter (`68413af6_git-exporter`).
-- `/config/custom_components/`: `doorman`, `hacs`, `samsungtv_tizen`,
-  `scheduler` (scheduler + scheduler-card are HACS-tracked; doorman + samsungtv
-  are legacy hand-installed). **`script_engine` retired 2026-10-21** — component
-  + scripts archived under `/config/deprecated/`, all logic now YAML automations.
+- `/config/custom_components/`: `doorman`, `hacs`, `scheduler`
+  (scheduler + scheduler-card are HACS-tracked; `doorman` is legacy
+  hand-installed). `samsungtv_tizen` removed 2026-10-20 and `script_engine`
+  retired 2026-10-21 — component + scripts archived under
+  `/config/deprecated/`, all logic now YAML automations.
 
 ## Versioning / Git Exporter
 
@@ -83,25 +85,19 @@ mirrored to the GitHub repo).
 
 - Groups (YAML): `group.family` = person.sara + person.erik; `group.ceiling_lamps`
   (entre_hall_tak, korridor_tak, laslampa_on_off, bokhylla_h); `group.night_lamps`
-  (ute_huvudentre [RESOLVED 2026-10-21], p8, seasonal sockets p10/p11/p1/p4,
-  p6). *Stale refs still to clean:* kontor_on_off, koket_on_off (never existed),
-  bokhylla_v (purged dead device).
+  (ute_huvudentre, seasonal sockets p10/p11/p1/p4, p6). Cleaned 2026-10-21: only
+  live entities remain (kontor_on_off/koket_on_off never existed; bokhylla_v +
+  others purged).
 - Locks (Yale via `doorman`): `lock.back`, `lock.main`, `lock.carport`.
 - Outside-light sensor (ZHA/Aqara): `sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance` —
   battery, unavailable since 2026-10-19T11:03Z (needs battery; keep device).
-- **ZHA migration of the dead Hue bridge ongoing (2026-10-21).** All light
-  entities below are ZHA now: `light.entre_hall_tak`, `light.korridor_tak`,
-  `light.color_temperature_light_1`, `light.l3_1`, `light.l3_2`,
-  `light.gastrum_tak` (new router), `light.isac_tak` (new router),
-  `light.ute_huvudentre` (outdoor main entrance), `switch.p6`,
-  `switch.laslampa_on_off`, plus bedroom dimmers
-  (`light.dimmer_fixed_bedroom_light_2`, `light.dimmer_fixed_livingroom_light`).
-  Remotes: Hue dimmer RWL021 (`00:17:88:01:02:d4:f7:ba`), STYRBAR
-  (`34:10:f4:ff:fe:fd:43:2b`), IKEA TRETAKT plug `switch.isac_lekstuga`.
-  Details: `docs/hue_zha_migration.md`.
-- Integrations: **zha (ConBee II)**, samsungtv (+ dlna_dmr, likely duplicate TV
-  entries), spotify, **tibber (setup_error)** (still pending), met, cast,
-  mobile_app x4 phones. **hue integration removed 2026-10-21.**
+- **ZHA migration of the dead Hue bridge COMPLETE (2026-10-21).** All lights and
+  plugs are on ZHA (ConBee II) with canonical entity IDs; canonical ID ↔ IEEE
+  table in the ZHA section below. Full workbook:
+  `docs/archive/hue_zha_migration.md`.
+- Integrations: **zha (ConBee II)**, tuya, met, mobile_app ×4 phones. Removed
+  2026-10-20/21 (do not expect their entities): hue, samsungtv, dlna_dmr,
+  spotify, cast, tibber, unifi.
 - **Tuya re-authed 2026-10-21** — entry `916b4f19…` (title
   erik.rosenlund.private@gmail.com) back to `loaded` (was `setup_error`/token
   expired). 5 Tuya devices, **16 entities**. The outsides/gazebo lights ARE
@@ -116,7 +112,8 @@ mirrored to the GitHub repo).
     light entities, **not** stale refs; show `unavailable` when the plug is
     physically off/absent (P4/P1 seasonal).
   - Power meters: `sensor.p{4,10,11}_{current,power,voltage,total_energy}`.
-- Registry scale: ~958 entities, 211 devices, 535 disabled-but-not-purged.
+- Registry: UniFi/Tibber/TV entities removed; remaining disabled entities are
+  legit default-disabled diagnostics (~227).
 
 ## Automations (YAML — script_engine retired)
 
@@ -125,7 +122,7 @@ All legacy automation logic ran in custom Python
 component **failed to load (ModuleNotFoundError) and was retired 2026-10-21**
 (archived under `/config/deprecated/`). The build is now pure YAML
 automations + schedule helpers. Migration design + P4 requirements: see
-`docs/automation_requirements.md`. Summary of what the stack does:
+`docs/archive/automation_requirements.md`. Summary of what the stack does:
 
 - Home-status machine `sensor.home_status` (`awake/sleep/away`) — input helpers
   + template in `/config/template/home_status.yaml`, schedules in
@@ -150,6 +147,37 @@ automations + schedule helpers. Migration design + P4 requirements: see
   `config/device_registry/list` / `update` (rename a device by identifiers).
   The trigger-list command is `device_automation/trigger/list` — the legacy
   `config/device_automation/trigger/list` form returns `unknown_command`.
+
+### Device map (canonical entity_id ↔ IEEE)
+
+All migrated onto ZHA 2026-10-21 (Hue bridge retired). Re-paired devices were
+renamed to these canonical IDs so `groups.yaml`/automations kept working.
+
+| Entity | Physical device | IEEE |
+|--------|-----------------|------|
+| `light.entre_hall_tak` | Hue ambiance — Entré hall tak | `00:17:88:01:02:5d:20:78` |
+| `light.korridor_tak` | IKEA Dimmable — Korridor tak | (verified by flashing) |
+| `light.color_temperature_light_1` | IKEA Color temp — Korridor 2 (E14 opal) | `68:0a:e2:ff:fe:97:37:28` |
+| `light.l3_1` | Hue ambiance — "Groventre tak" (night corner) | `00:17:88:01:02:5f:a1:d1` |
+| `light.l3_2` | IKEA Color temp — "Carport ingång" (night corner) | `8c:6f:b9:ff:fe:1e:fb:59` |
+| `light.gastrum_tak` | IKEA E27 WS globe — guest room, mesh **router** | `8c:6f:b9:ff:fe:1e:f9:36` |
+| `light.isac_tak` | IKEA E27 WS globe — Isacs room, mesh **router** | `8c:6f:b9:ff:fe:1e:fb:40` |
+| `light.ute_huvudentre` | IKEA E27 WW — outdoor main entrance (was unnamed baseline bulb) | `58:8e:81:ff:fe:07:1b:b6` |
+| `switch.laslampa_on_off` | innr plug P7 — "Gästrum fönster" | `00:15:8d:00:01:fd:e8:60` |
+| `switch.p6` | innr plug — Isacs sänglampa | `00:15:8d:00:01:fd:ec:ab` |
+| `switch.hobby_rum_fonster` | innr SP 120 — hobby room window | `00:15:8d:00:01:fe:98:f0` |
+| `switch.isac_lekstuga` | IKEA TRETAKT plug — Isacs play house | `14:2d:41:ff:fe:e7:3f:0b` |
+| (STYRBAR) | IKEA STYRBAR E2002 dimmer — Isacs lekstuga, `zha_event` buttons | `34:10:f4:ff:fe:fd:43:2b` |
+| (Hue dimmer) | Hue dimmer RWL021 — Isacs, `zha_event` buttons | `00:17:88:01:02:d4:f7:ba` |
+| `light.dimmer_fixed_bedroom_light_2` / `light.dimmer_fixed_livingroom_light` | ZHA dimmers (baseline, not from Hue bridge) | — |
+
+**Purged 2026-10-21 — physically disconnected, do not hunt for these:** `light.p8`
+(hunden), `light.steamlink` (P9), `light.on_off_plug_1` (P5), `light.l2`
+(Christmas), `light.color_temperature_light_1_3` (L5), `light.dimmable_light_1`,
+`light.bokhylla_v`. Hue virtual room entities (`light.vardagsrum`, `light.hall`,
+`light.korridor`, `light.traningsrum`, `light.kvallsbelysning`,
+`light.carport_korridor`, `light.gastrum`, `light.other`) died with the bridge —
+recreate as HA groups if ever needed.
 
 ### Pairing routine
 - Open/refresh permit-join via REST `POST /api/services/zha/permit
