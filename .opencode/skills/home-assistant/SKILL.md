@@ -323,31 +323,44 @@ recreate as HA groups if ever needed.
   this; instruct it to always write automations as YAML lists.
 - Rollout checklist: `docs/AGENT_TOOLS.md` §5.
 
-### config_tools__call_service (P9 — v0.3.0, deployed + verified 2026-10-23)
+### config_tools__call_service (P9 — v0.3.1, hardened + deployed 2026-10-23)
 
 - **Purpose:** let the chat agent physically blink/act on lamps via real
   service params the entity intents can't carry (`flash`, `effect`,
   `transition`). The `assist` LLM API exposes no generic "any service" toggle;
   HA's `ActionTool` is script-only for schemas → custom tool in `config_tools`.
+- **Native alternative (prefer for named actions):** an exposed **script** becomes
+  a `script.*` tool automatically (schema = its `fields`; `ActionTool`). See
+  `scripts.yaml::korridor_blink` (`fields: flash|transition`) — "blinka
+  korridorlampan" works as a native script call, zero component code.
 - **Allowlist** (`const.py::ALLOWED_SERVICE_ACTIONS`, single source of truth):
   `light|switch` `turn_on`/`turn_off`/`toggle` only. `group.*` targets work via
   core group expansion.
 - **Blink = `light.turn_on` + `data={"flash": "short"|"long"}`.** Feature-bit
   background: ZHA lights report `supported_features` 40 = FLASH(8)+
-  TRANSITION(32); the intents can't express flash, so prefer the service tool.
-- **Gating:** admin (`_is_admin`, toggle-able to exposure-bound any-user) +
-  **exposure boundary** — target must be in the entity registry AND
+  TRANSITION(32); the intents can't express flash, so use the service tool (or
+  the script) when a param is needed.
+- **Gating (v0.3.1): EXPOSURE-ONLY, no admin gate** — target must be in the
+  entity registry AND
   `homeassistant.exposed_entities.async_should_expose(hass,
   llm_context.assistant, entity_id)` (assistant == `"conversation"` for the
-  OpenRouter pipeline). Service schema validation runs in
-  `hass.services.async_call(blocking=True)` → bad fields return the real
-  Voluptuous error to the model. Returns re-read `state` + `attributes`.
-- **Verify recipe (done 2026-10-23):** `conversation/process` prompting the
-  exact tool + entity. Discriminator tool-vs-intent: `response.data.success`
+  OpenRouter pipeline). Matches HA's native model (intents aren't admin-gated;
+  the exposure registry IS the per-assistant permission). Admin gate remains on
+  `write_file`/`check_config`/`reload` only.
+- **`data` is a TYPED probatio schema** (`flash` In short/long, `brightness_pct`
+  0-100, `brightness` 0-255, `transition` ≥0, `effect`, `color_temp_kelvin`,
+  `color_temp`, `color_name`, `white`, `profile`, `xy_color`/`rgb_color`/
+  `rgbw_color`/`rgbww_color`/`hs_color` as arrays). Unknown keys → parse-time
+  `did you mean '...'` error. Service schema in
+  `hass.services.async_call(blocking=True)` backstops. Returns re-read `state`
+  + `attributes`; every call logged (`_LOGGER.info/warning`).
+- **Writes in config_tools are atomic** (tempfile + `os.replace`, chmod 0644) —
+  a crash can't leave a truncated YAML.
+- **Verify recipe:** `conversation/process` prompting the exact tool + entity.
+  Discriminator tool-vs-intent: `response.data.success`
   stays `[]` for the tool (an entity intent populates `success`). Trust state,
   not the reply — force `light.turn_off` and watch the state flip, then back on.
-  Bogus field e.g. `data={"bogus_field":123}` → verbatim
-  `Service call failed: not a valid option at 'bogus_field'`.
+  Typo'd field in typed `data` (e.g. `data={"brightnes":123}`) → parse error.
 - **GOTCHA found during deploy:** the VM's old v0.2.0 `_device_entity_ids` used
   `registry.get_entries_for_device_id` (EntityRegistry) → AttributeError —
   repo version uses `registry.entities.get_entries_for_device_id` (HA 2026.10);

@@ -1,10 +1,30 @@
 # P9 — `config_tools__call_service`: whitelisted service-action tool for the chat agent
 
-Status: **DEPLOYED + VERIFIED 2026-10-23 (v0.3.0)** — component + `AGENT_HANDBOOK.md`
-deployed to the VM via tar-over-SSH, core restarted, exercised live through the
-chat agent (real `light.turn_off`/`turn_on` state change via the tool + real HA
-validation error on a bogus `data` field relayed verbatim), exporter pushed
-(`989e5a0`), committed. Implementation history in this file.
+Status: **DEPLOYED + VERIFIED 2026-10-23 (v0.3.0), hardened v0.3.1** —
+component + `AGENT_HANDBOOK.md` deployed to the VM via tar-over-SSH, core
+restarted, exercised live through the chat agent (real `light.turn_off`/
+`turn_on` state change via the tool + real HA validation error on a bogus
+`data` field relayed verbatim), exporter pushed (`989e5a0` verified; v0.3.1
+pending), committed. Implementation history in this file.
+
+> **v0.3.1 hardening (2026-10-23, applied here / deferred above)**
+> Critical review led to these adjustments (see §6):
+> 1. **Admin gate dropped for `call_service`** — now *exposure-only* (the
+>    exposure registry is HA's own per-assistant permission model). Admin gate
+>    remains on `write_file`/`check_config`/`reload`.
+> 2. **`data` is a typed probatio schema** (enumerated fields) instead of the
+>    opaque `selector.ObjectSelector()` → unknown keys fail at parse time with
+>    a helpful "did you mean '...'" error; HA's service schema still backstops.
+> 3. **`_atomic_write` is real now** (tempfile + `os.replace`, chmod 0644) —
+>    a crash can no longer leave a truncated YAML file.
+> 4. **`_LOGGER` added** — `info` on every successful `call_service`,
+>    `warning` on failures, `exception` on reload/device-trigger errors.
+> 5. **`manifest.json`** → `0.3.1`, `"integration_type": "service"`, honest
+>    `iot_class: local_polling`.
+> 6. **Native alternative documented + added:** `scripts.yaml::korridor_blink`
+>    (`fields: flash|transition`) — exposed scripts surface as `script.*` LLM
+>    tools automatically, so the blink use-case is achievable with zero
+>    component code; `call_service` remains for the generic gap.
 
 ## Goal
 
@@ -132,7 +152,16 @@ Bump version `0.2.0` → `0.3.0`.
 
 ## 4. Open decisions (confirm before executing)
 
-- **Admin gating**: plan = admin-gated (matches write_file/reload). If
-  Sara/Erik must blink lamps, switch to exposure-bound for any logged-in user.
+- ~~**Admin gating**~~ **RESOLVED 2026-10-23:** dropped for `call_service`;
+  exposure-bound only (matches HA's native assistant-access model — the
+  exposure registry is the per-assistant permission). Admin stays on the
+  config-writing tools.
 - **Allowlist scope**: light/switch only. Extend later (e.g. `scene`,
   `homeassistant.turn_*`) on request.
+
+## 5. Open decisions → outcome / review follow-up (2026-10-23)
+
+Critical review of the deployed setup (`tools.py`, manifest, docs) produced
+§1-4 adjustments above. Full write-up of the review findings is in the session
+log; durable conclusions are captured in `.opencode/skills/home-assistant/
+SKILL.md` (config_tools__call_service section) and `AGENT_TOOLS.md` §3.6.

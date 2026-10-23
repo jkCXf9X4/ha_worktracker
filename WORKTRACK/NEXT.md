@@ -75,21 +75,31 @@ rotated.** Build milestones done; remaining items are optional enhancements
 - [ ] #020 **Seasonal night-lamp grouping (later)** — make the `p10/p11/p1`
       Christmas sockets a toggleable group so "night lamps" ≠ "Christmas"
       year-round.
-- [x] #022 **`config_tools__call_service` (P9) — DONE + DEPLOYED 2026-10-23
-      (v0.3.0)** — whitelisted service-action tool so the chat agent can call
+- [x] #022 **`config_tools__call_service` (P9) — DONE + DEPLOYED 2026-10-23,
+      hardened v0.3.1** — whitelisted service-action tool so the chat agent can call
       e.g. `light.turn_on` with `flash: short/long` (blink lamps) and real
       service params the entity intents can't carry (`flash`, `effect`,
       `transition`). Living plan: `docs/call_service_tool_P9_PLAN.md`.
-      - **Component (v0.3.0):** `CallServiceTool` in `config_tools` (allowlist
-        `light|switch` turn_on/off/toggle in `const.py`, admin gate +
-        entity-registry + exposed-entity target resolution in `tools.py`,
-        registered 8th in `llm.py`, manifest → 0.3.0). `data` declared as
-        `selector.ObjectSelector()` → model sees `{"type":"object"}`; HA's own
-        service schema validates the fields and returns the real error.
+      - **Component (v0.3.1):** `CallServiceTool` in `config_tools` (allowlist
+        `light|switch` turn_on/off/toggle in `const.py`, entity-registry +
+        **exposure-only** gating (no admin gate) in `tools.py`, registered 8th
+        in `llm.py`, manifest → 0.3.1 with `integration_type: service`).
+        `data` = **typed probatio schema** (`flash`, `brightness_pct`,
+        `brightness`, `transition`, `effect`, `color_temp_kelvin`, `color_temp`,
+        `color_name`, `white`, `profile`, `xy_color`/`rgb_color`/`rgbw_color`/
+        `rgbww_color`/`hs_color` arrays) → parse-time "did you mean" errors;
+        HA's service schema backstops. Writes are atomic (tempfile+`os.replace`);
+        `_LOGGER` on every call.
       - **Why:** ZHA lights report `supported_features` 40 = FLASH+TRANSITION, so
         blink is physically possible, but HA's `ActionTool` schema cache is
         script-only and the assist API has no generic service exposure.
-      - **DEPLOYED + VERIFIED 2026-10-23:** code + `AGENT_HANDBOOK.md` pushed via
+      - **Native alternative (prefer for named actions):** an exposed **script**
+        surfaces as a `script.*` tool automatically (schema from its `fields`).
+        `scripts.yaml::korridor_blink` (`fields: flash|transition`) added so
+        "blinka korridorlampan" works with zero component code; `call_service`
+        covers the generic gap (any exposed light/switch, arbitrary data).
+      - **DEPLOYED + VERIFIED 2026-10-23 (v0.3.0), hardened v0.3.1:** code +
+        `AGENT_HANDBOOK.md` pushed via
         tar-over-SSH, `ha core check` green, core restarted. Live via
         `conversation/process`: forced `light.turn_off` → state `on`→`off` and
         back `on` with `response.data.success == []` (empty list = tool path, the
@@ -99,8 +109,8 @@ rotated.** Build milestones done; remaining items are optional enhancements
       - **GOTCHA fixed en route:** the VM's old `find_device` was broken
         (`registry.get_entries_for_device_id` instead of
         `registry.entities.get_entries_for_device_id`) — the repo version fixed
-        it. Open decision stands: admin-gated now; drop `_is_admin` if
-        Sara/Erik must blink too.
+        it. **Admin gate RESOLVED:** dropped for `call_service` (exposure bound
+        only, per HA's native model); admin stays on write/check/reload.
 - [x] #021 **Agent config tools (P8)** — ✅ **DONE + DEPLOYED 2026-10-22**:
        custom component `config_tools` = `llm` platform adding bounded tools to
        the family chat agent: `read_file`/`glob_files` (everyone) +

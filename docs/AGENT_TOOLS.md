@@ -14,10 +14,16 @@ that flow). The 5 schedule-writer scripts were **removed** from `scripts.yaml`
 generic tools + live helper state is out of the agent's reach.
 
 **P9 (2026-10-23): `config_tools__call_service` is DEPLOYED + VERIFIED live
-(v0.3.0)** — component + handbook on the VM, core restarted, exercised through
-the chat agent (real `light.turn_off`/`turn_on` state change with empty intent
-`success` = tool path; bogus `data` field returned the real HA validation error
-verbatim). Exporter push `989e5a0`. §3.6 documents design/mechanism; rollout +
+(v0.3.0, hardened v0.3.1)** — component + handbook on the VM, core restarted,
+exercised through the chat agent (real `light.turn_off`/`turn_on` state change;
+typed `data` rejects bad fields with a "did you mean" parse error). **v0.3.1
+hardening:** admin gate dropped for `call_service` (now exposure-bound only, per
+HA's native assistant-access model), `data` is a typed probatio schema (no more
+opaque free-form object), writes are atomic (tempfile + `os.replace`), and the
+component logs every call via `_LOGGER`. Native alternative added:
+`script.korridor_blink` surfaces to the agent as a `script.*` tool with `fields`
+(schema from `ActionTool`) — the HA-blessed path for a named blink action.
+Exporter push for v0.3.1: pending. §3.6 documents design/mechanism; rollout +
 findings in `docs/call_service_tool_P9_PLAN.md`.
 
 Design (mechanism + rationale) below; rollout executed per §5.
@@ -59,7 +65,7 @@ appear in the same `assist` API the OpenRouter agent already uses.
 | Write allowlist | `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml` — the reloadable domains only. |
 | Read/glob allowlist | Everything under `/config` **except** `secrets.yaml`, `.storage/`, `*.db`, `*.db-wal`, `*.db-shm`, `home-assistant.log*`, `configuration.yaml` (read OK? no — also exclude `groups.yaml.bak`). No paths outside `/config`. |
 | Hard denylist (both) | `configuration.yaml`, `secrets.yaml`, `.storage`, DBs, logs, `custom_components/config_tools/` itself. |
-| Admin gating | `read_file`/`glob_files` → everyone; `write_file`/`check_config`/`reload`/`bind_remote` → reject unless caller is admin + `llm_context.assistant` is the family agent's assistant name. |
+| Admin gating | `read_file`/`glob_files` → everyone; `call_service` → any logged-in user, exposure-bound (`async_should_expose`); `write_file`/`check_config`/`reload` → reject unless caller is admin + `llm_context.assistant` is the family agent's assistant name. |
 | Size caps | read caps at ~8k chars (token budget); write rejects >64k; glob capped at 100 hits. |
 | No secrets in output | read of `secrets.yaml` impossible by allowlist; redact `!secret`-referenced values never read anyway. |
 | Determinism | `bind_remote` resolves device/trigger from registry + live enum; agent never invents `device_id`/subtypes. |
@@ -123,15 +129,22 @@ helpers; no shell, no new deps).
   and use exactly what it returns.** (Same lifecycle source as the old `bind_remote`
   plan, now exposed as read-only tools + generic `write_file` for the actual edit.)
 
-### `config_tools__call_service` — P9 (v0.3.0, **dep + verified live 2026-10-23**)
+### `config_tools__call_service` — P9 (v0.3.0 → hardened **v0.3.1**, dep + verified live)
 - **Why:** the `assist` LLM API only surfaces entity intents + exposed scripts +
   custom `llm` platform tools; there is no generic "expose any service" toggle.
   HA's built-in `ActionTool` (helpers/llm.py) is script-only for schemas (its
-  param cache covers scripts, not arbitrary services) → we build the tool
-  ourselves. ZHA lights report `supported_features` = `40` = FLASH(8)+
-  TRANSITION(32), so blinking via `light.turn_on` `flash:` is physically
-  supported — but entity intents (`light__HassLightSet`) can't carry `flash`/
-  `effect`/`transition`.
+  param cache covers scripts, not arbitrary services; and scripts surface natively
+  via `script/llm.py::ScriptTool`) → for *arbitrary* params on *arbitrary* exposed
+  entities we build the tool ourselves. ZHA lights report `supported_features` =
+  `40` = FLASH(8)+TRANSITION(32), so blinking via `light.turn_on` `flash:` is
+  physically supported — but entity intents (`light__HassLightSet`) can't carry
+  `flash`/`effect`/`transition`.
+- **Native alternative (prefer for named actions):** an exposed **script** becomes
+  a `script.*` tool automatically, with its parameter schema derived from the
+  script's `fields` (`ActionTool`). `scripts.yaml::korridor_blink` demonstrates
+  this: `fields: flash|transition` → the agent can "blinka korridorlampan" with
+  `flash: short` as a native script call — no component code. Use `call_service`
+  only for the generic gap (any light/switch, arbitrary data).
 - **Allowlist** (single source of truth in `const.py`):
 
   | domain   | services                         |
@@ -143,23 +156,28 @@ helpers; no shell, no new deps).
   request (e.g. `scene`, `homeassistant.turn_*`).
 - params: `service` (e.g. `"light.turn_on"`), `entity_id` (ONE exposed entity,
   single target keeps it simple + bounded; groups cover multi-light cases),
-  `data` (optional free-form object for service fields: `flash`,
-  `brightness_pct`, `transition`, `effect`, …).
+  `data` (**typed** probatio schema: `flash` (In short/long), `brightness_pct`
+  0-100, `brightness` 0-255, `brightness_step` -255..255, `transition` ≥0,
+  `effect`, `color_temp_kelvin`, `color_temp`, `color_name`, `white`, `profile`,
+  `xy_color`/`rgb_color`/`rgbw_color`/`rgbww_color`/`hs_color` as value arrays).
+  Unknown keys fail at parse time with a "did you mean" hint instead of a raw
+  free-form dict.
 - Flow: split `service` → `domain.service_name` → allowlist check (else error
-  listing allowed services) → **admin gate** (`_is_admin`, same as
-  `write_file`/`reload`) → target must exist in the **entity registry** AND be
+  listing allowed services) → target must exist in the **entity registry** AND be
   exposed to `llm_context.assistant` via
-  `homeassistant.exposed_entities.async_should_expose` (exposure boundary) →
-  `service_data = {**data, "entity_id": entity_id}` → the tool runs HA's own
-  schema validation by calling
-  `hass.services.async_call(..., blocking=True)` (bad/typo'd fields return the
-  real Voluptuous error to the model) → re-reads the entity state and returns
+  `homeassistant.exposed_entities.async_should_expose` (**exposure gating only —
+  no admin gate; v0.3.1**) → `service_data = {**data, "entity_id": entity_id}` →
+  `hass.services.async_call(..., blocking=True)` (HA's own schema validation
+  backstops the typed `data`) → re-reads the entity state and returns
   `{"result": "ok", "entity_id", "state", "attributes"}`; all failures relayed
-  with `error=True`.
-- Admin gating decision is per-deployment: plan = **admin-gated**; relax to
-  "any logged-in user, exposure-bound" if family members must blink too.
+  with `error=True` and logged (`_LOGGER.warning/info`).
+- Why exposure-only is the right boundary: it matches HA's own assistant security
+  model (built-in intents don't require admin; the exposure registry *is* the
+  per-assistant permission). Admin stays on the config-writing tools where the
+  blast radius is far larger.
 - Component layout addition: `const.py` (`ALLOWED_SERVICE_ACTIONS`), `tools.py`
-  (`CallServiceTool`), `llm.py` (8th tool), `manifest.json` → `0.3.0`.
+  (`CallServiceTool`, typed data, atomic write, `_LOGGER`), `llm.py` (8th tool),
+  `manifest.json` → `0.3.1` (`integration_type: service`, honest `iot_class`).
 
 ### `config_tools__bind_remote` — **NOT BUILT** *(superseded by v0.2.0 tools)*
 - **Owner decision 2026-10-22: "way too specific" → dropped.** Its two real
