@@ -211,15 +211,15 @@ def render_schedules(helpers: dict, automations: list[dict]) -> str:
     lines.append("| Automation | När | Gör |")
     lines.append("|------------|-----|-----|")
     for a in sorted(automations, key=lambda x: (x.get("alias") or "").lower()):
-        trig = a.get("trigger")
+        trig = a.get("trigger") or []
         if not isinstance(trig, list):
             trig = [trig]
-        if not any(t.get("platform") == "time" for t in trig):
+        if not any(t is not None and t.get("platform") == "time" for t in trig):
             continue
         alias = a.get("alias", a.get("id", "?"))
         when = []
         for t in trig:
-            if t.get("platform") == "time":
+            if t is not None and t.get("platform") == "time":
                 if ta := trigger_time(t):
                     when.append(ta)
         conds = a.get("condition")
@@ -325,6 +325,14 @@ def main() -> None:
 
     helpers = load_helpers(config)
     automations = load_automations(config)
+    for a in automations:
+        for key in ("trigger", "condition", "action"):
+            v = a.get(key)
+            if v is None:
+                a[key] = []
+            elif not isinstance(v, list):
+                a[key] = [v]
+            a[key] = [x for x in a[key] if x]
     print(f"helpers: {len(helpers)} · automations: {len(automations)}")
 
     (out / "SCHEDULES.md").write_text(render_schedules(helpers, automations), encoding="utf-8")

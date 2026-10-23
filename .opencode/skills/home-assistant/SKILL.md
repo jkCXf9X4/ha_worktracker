@@ -16,8 +16,10 @@ config at `/config/docs/`.
 - **SSH & Web Terminal add-on** at `192.168.1.248:2222`, user **`root`**
   (add-on maps `/config` read-write and provides a root shell).
 - Password is supplied by the owner during a session — do **not** persist it in
-  this repo or in any committed file.
-- Working connect command:
+  this repo or in any committed file. Local publickey auth also works
+  (`~/.ssh/id_ed25519` is allowed) — use it to avoid needing the password:
+  `ssh -p 2222 -o PreferredAuthentications=publickey root@192.168.1.248 '<cmd>'`.
+- Working connect command (password auth):
 
   ```bash
   sshpass -p "$HA_PASS" ssh -p 2222 -o StrictHostKeyChecking=accept-new \
@@ -46,7 +48,7 @@ config at `/config/docs/`.
 
 ## Environment facts
 
-- VM: **HAOS 18.2** on Proxmox. **HA Core 2026.10.2** (upgraded from 2026.9.2 on
+- VM: **HAOS 18.3** on Proxmox. **HA Core 2026.10.2** (upgraded from 2026.9.2 on
   2026-10-21). `/config` → symlink to `/homeassistant`.
 - SSH container: **Alpine 3.24** (has `python3` + `yaml`, git, etc.).
 - Install add-ons present: Advanced SSH & Web Terminal (`a0d7b954_ssh`), Samba
@@ -85,7 +87,11 @@ config at `/config/docs/`.
 
 - Groups (YAML): `group.family` = person.sara + person.erik; `group.ceiling_lamps`
   (entre_hall_tak, korridor_tak, laslampa_on_off, bokhylla_h); `group.night_lamps`
-  (ute_huvudentre, seasonal sockets p10/p11/p1/p4, p6). Cleaned 2026-10-21: only
+  (ute_huvudentre, p4_socket). **Since 2026-10-23:** seasonal sockets live in
+  `group.christmas_sockets` (p10/p11/p1/p6), gated by
+  `input_boolean.christmas_lights` (default on) in `night_lights.yaml`. Scenes in
+  `/config/scenes/scenes.yaml`: `scene.nattmode` (ceiling off + night-corner dim),
+  `scene.taklampor_pa`, `scene.nattlampor_pa`. Cleaned 2026-10-21: only
   live entities remain (kontor_on_off/koket_on_off never existed; bokhylla_v +
   others purged).
 - Locks (Yale via `doorman`): `lock.back`, `lock.main`, `lock.carport`.
@@ -127,14 +133,23 @@ automations + schedule helpers. Migration design + P4 requirements: see
 - Home-status machine `sensor.home_status` (`awake/sleep/away`) — input helpers
   + template in `/config/template/home_status.yaml`, schedules in
   `/config/input_*/schedules.yaml` (wake 06:45, bedtime 21:00 Sun–Thu /
-  21:30 Fri–Sat).
+  21:30 Fri–Sat). Template is **trigger-based via `time_pattern` every minute**
+  (added 2026-10-23 — a state-based template never re-ran on the clock, so the
+  awake/sleep transitions were stuck until someone arrived/left).
 - Locks on sleep/away (`automations/locks.yaml`); outside-light lux hysteresis
-  (400 on / 150 off) (`outside_light.yaml`); ceiling + night lamps
-  (`ceiling_lights.yaml`, `night_lights.yaml`); Sovrum bedroom schedule
-  06:22–09:36 (Scheduler addon); startup grace `00_startup_grace.yaml`.
-- 14 YAML automations active across `/config/automations/` (include_dir_merge_list).
-- ZHA remote bindings live as `platform: device` automations in the same dir
-  (`styrbar_lekstuga.yaml`, `hue_dimmer_isacs.yaml`).
+  (400 on / 150 off, **read live from the input_number helpers**
+  `outside_light_on/off_threshold` via `above:`/`below:` entity refs)
+  (`outside_light.yaml`); ceiling + night lamps (`ceiling_lights.yaml` —
+  sleep action now `scene.turn_on scene.nattmode`, `night_lights.yaml`);
+  Sovrum + Isac morning fades (`sovrum.yaml`, `isac_room.yaml`);
+  single startup grace `00_startup_grace.yaml` (`input_boolean.ha_started`,
+  2 min; the 1-min/2-min split + `ha_started_2min` were removed 2026-10-23).
+- **16 YAML automations active** across `/config/automations/`
+  (include_dir_merge_list).
+- ZHA remote bindings are **blueprint instances** (added 2026-10-23):
+  `automations/hue_dimmer_isacs.yaml` + `styrbar_lekstuga.yaml` use
+  `blueprints/automation/zha_remote_lights.yaml` / `zha_remote_switch.yaml`
+  (`use_blueprint: path: <filename>.yaml`, **no `local/` prefix**).
 
 ## ZHA (ConBee II) operations
 
@@ -390,6 +405,21 @@ recreate as HA groups if ever needed.
   YAML locally (Write tool) → `yaml.safe_load`+`safe_dump` round-trip to verify
   → push via tar-over-ssh. Templates with embedded string literals are fragile
   through shell; prefer `~`-concatenation or separate `variables`.
+- **Dynamic numeric_state thresholds** (`above:`/`below:`): use an **entity id**
+  (`above: input_number.xxx`), NOT a Jinja string — the schema only accepts a
+  float or an entity id in domains input_number/number/sensor/zone. A template
+  string fails with `expected float at 'above'. Got None` and disables the
+  automation.
+- **Local automation blueprints**: file in `blueprints/automation/<name>.yaml`,
+  reference as `use_blueprint: path: <name>.yaml` (**no `local/` prefix** — that
+  only applies to UI-imported blueprints; wrong path → `Unable to find
+  local/<name>.yaml` and the automation is silently `unavailable`). Device
+  selectors take `integration:` (not `domain:`). YAML 1.1 footgun: unquoted
+  `on`/`off` become booleans — quote trigger/conditions `id:`/`state:` values.
+- **Purging stale entities**: when automations are replaced/renamed, the old
+  registry entities stay `unavailable` (e.g. the retired `ha_started_2min`,
+  the 8 old per-button remote automations). Harmless; removal must be done in
+  the UI or by editing `.storage/core.entity_registry` (risky, not automated).
 
 ## How to grow this skill
 
