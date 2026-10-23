@@ -94,15 +94,16 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
       `taklampa`/`natthorn`/`sasong`/`utelampa` created + assigned; ceiling,
       night-light, christmas and nattmode automations target them. Groups
       `ceiling_lamps`/`night_lamps`/`christmas_sockets` deleted.
-- [ ] #032 **Pause-toggle helpers** — `input_boolean.automatik_taklampor` /
-      `automatik_nattlampor` / `automatik_uteljus` gate their automations so the
-      family can pause a behavior from the dashboard without editing YAML. With
-      #026 the gate can hook the single ceiling automation's `choose`.
+- [x] #032 **Pause-toggle helpers** — **DONE 2026-10-23**: `input_boolean/
+      automatik.yaml` adds `automatik_taklampor` + `automatik_nattlampor`
+      (default on, restored across restarts). Ceiling automation and both night
+      automations gated on their toggle. `automatik_uteljus` not added — the
+      daylight flag (`light_outside`) is the sensor, not a behavior worth pausing.
 - [ ] #033 **`next_wake`/`next_bedtime` template sensor** — derived next
       wake/sleep boundary for the dashboard (defer until #024 lands).
-- [ ] #034 **`script.goodnight`** — one voice/dashboard action: ceiling off,
-      night-corner dim (`script.nattmode`), doors locked. Manual convenience on
-      top of the automatic sleep behavior.
+- [x] #034 **`script.goodnight`** — **DONE 2026-10-23**: composes `script.nattmode`
+      + `script.lock_doors`; verified live (ceiling off, night corner dim, doors
+      locked). Voice/dashboard "god natt" one-shot.
 - [x] #035 **Christmas sockets via label + scenes/groups de-dup** — **DONE PARTIAL
       2026-10-23**: label `sasong` replaces the `christmas_sockets` group (#028/
       #031); scenes keep static membership (scenes can't target labels) but the

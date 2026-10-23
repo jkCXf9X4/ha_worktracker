@@ -191,6 +191,24 @@ automations + schedule helpers. Migration design + P4 requirements: see
 - **12 automation entities, 0 unavailable** (2026-10-23): the 4 orphaned
   ceiling registry entries were removed via WebSocket
   `config/entity_registry/remove`.
+- **Automations are thin "when" wrappers** (2026-10-23): the actual light/lock
+  behavior lives in **scripts** (behavior boxes) so automations are just
+  trigger→condition→`script.X`:
+  - `script.uteljus_pa/av` — front outdoor (`label.utelampa`) + seasonal
+    (`label.sasong`); the **only** place the `christmas_lights` rule exists.
+    night_lights.yaml just calls them.
+  - `script.sasong_sync` — resolves `sasong` from `christmas_lights`+`light_outside`
+    (christmas toggle automation calls it).
+  - `script.lock_doors` — locks back+main; used by locks.yaml (×2) + `goodnight`.
+  - `script.goodnight` — composes `nattmode` + `lock_doors` (voice "god natt").
+  - `script.nattmode` — ceiling off (`taklampa`) + night-corner dim (`natthorn`).
+  - `script.light_on_with_transition` — fade a light **or** an area (sovrum/isac).
+- **Pause toggles** (2026-10-23): `input_boolean.automatik_taklampor` /
+  `automatik_nattlampor` gate the ceiling and night automations — family can
+  pause a behavior from the dashboard (Automatik card on the Belysning view).
+- Dashboard views (2026-10-23): overview, belysning (Automatik card + 9 area
+  cards), utomhus (2 areas + Säsongsbelysning = p10/p1/p6), historik, schema.
+  Energi view removed (had only the dead `sensor.p4_power`).
 - ZHA remote bindings are **blueprint instances** (added 2026-10-23):
   `automations/hue_dimmer_isacs.yaml` + `styrbar_lekstuga.yaml` use
   `blueprints/automation/zha_remote_lights.yaml` / `zha_remote_switch.yaml`
