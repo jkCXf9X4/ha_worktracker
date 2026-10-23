@@ -225,6 +225,35 @@ automations + schedule helpers. Migration design + P4 requirements: see
   `blueprints/automation/zha_remote_lights.yaml` / `zha_remote_switch.yaml`
   (`use_blueprint: path: <filename>.yaml`, **no `local/` prefix**).
 
+### Testing automations & pause gates live (2026-10-23)
+
+Verified the hard way while testing the collapsed automations:
+
+- **Do NOT use the `automation.trigger` service to test a gate/condition.** It
+  runs the action **regardless** of conditions (trace showed `action/0` executed
+  with no condition step while the gate was OFF) and updates `last_triggered`
+  every time — a gate test via `automation/trigger` produces a false "it ran"
+  result. Honest tests:
+  1. **Real state change** — e.g. flip `input_boolean.light_outside` on/off to
+     exercise the night automation's real trigger + `choose`; or
+  2. **WS `test_condition`** — pass the exact `condition` list, get a boolean
+     (`{"result": true|false}`); proves the gate flips the outcome without
+     firing anything; or
+  3. **`input_boolean.ha_started` off→on** — every state automation triggers on
+     `ha_started -> on` (and gates on its state), so one off→on cycle is a
+     synthetic **boot replay**: re-runs the whole reconcile path (night lamps,
+     ceiling, locks) through real services. Cleanest full-path test, and it
+     needs no separate trigger (ha_started is a real input_boolean).
+- **`homeassistant.set_state` is NOT a service** (`Service homeassistant.set_state
+  not found`) — you cannot fake entity states via the API. And **setting a
+  `person.*` state does NOT cascade to `group.family`** (groups track
+  device_trackers), so presence-based triggers can't be driven that way either.
+- **Don't trust `last_triggered` (or logbook "ran") as proof a gate worked** —
+  it updates even when a condition was bypassed by `automation.trigger`. Read the
+  automation **trace** (`trace/list`, `trace/get`) for the actual step sequence.
+- Real-world latency: Tuya plugs (p10/p11) and ZHA fixtures take **~3–6 s** to
+  actually change state after a service call — wait/sleep before asserting states.
+
 ## ZHA (ConBee II) operations
 
 - **Wiring/access**: ZHA integration runs on a ConBee II, config entry
@@ -510,6 +539,19 @@ recreate as HA groups if ever needed.
   the 8 old per-button remote automations). Safe automated removal:
   WebSocket `config/entity_registry/remove` per `entity_id` (done 2026-10-23;
   avoids hand-editing `.storage/core.entity_registry`).
+  - **WS message `id` must increase every request** — reusing the same `id`
+    fails with `id_reuse ... Identifier values have to increase`. Use a counter.
+  - Registry `remove` is one-shot per entity; batch = loop with incremented ids.
+- **Lovelace dashboard is storage-backed**: live dashboard lives in
+  `.storage/lovelace.lovelace` (not `/config/lovelace/...yaml`). The exporter's
+  `lovelace/lovelace.lovelace.yaml` is a *derived mirror*. To change the live
+  dashboard: **read it back via WS `lovelace/config` → edit JSON → `lovelace/config/save`**
+  (full config in the save payload), then restart the exporter so the mirror
+  updates. Editing the YAML mirror locally does NOT touch the live dashboard.
+- **Adding helpers via YAML needs a core restart**: `input_boolean`/
+  `input_number`/`input_datetime` added in YAML have **no reload service** —
+  `ha core restart` is required for new helper entities to appear (2026-10-23:
+  `automatik_las` only loaded after restart).
 
 ## How to grow this skill
 
