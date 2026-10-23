@@ -49,27 +49,25 @@ Nothing deployed — each waits on ⬜ owner decision before edit.
       zero-padded `HH:MM:SS` lexicographic compare (equivalent output, ~70%
       shorter). Candidate patch verified-equivalent; needs `ha core check` +
       live edge-trigger trace after apply. Owner sign-off: `docs/deep_dive_home_status.md`.
-- [ ] #025 **Startup-grace gate repetition** — `input_boolean.ha_started` +
-      the same 2-condition checklist duplicated across ceiling_lights (×4),
-      night_lights (×2), locks (×2), sovrum (×2), isac (×1). Optional: collapse
-      into one blueprint. Current form is correct/readable — only if column
-      count matters.
-- [ ] #026 **Ceiling-lights consolidation (Taras pattern)** — four same-shape
-      automations in `automations/ceiling_lights.yaml` → one data-driven
-      automation (state trigger over the 3 entities + `choose` on object_id →
-      action). ~99→~35 lines, one place to edit. Trade-off: loses per-behavior
-      greppability. Style choice, not a bug fix.
+- [x] #025 **Startup-grace gate repetition** — 12 automations share the
+      `ha_started` + checklist gate; **superseded by the #026 consolidation**
+      (2026-10-23): the ceiling/night automations got the gate folded into a
+      single location. Remaining per-file duplication is small and acceptable.
+- [x] #026 **Ceiling-lights consolidation (Taras pattern)** — **DONE 2026-10-23**:
+      four same-shape automations → one data-driven automation over
+      `sensor.home_status` + `input_boolean.light_outside` + `choose`, targeting
+      label `taklampa`. ~99→~40 lines; 4 orphaned registry automations purged.
 - [ ] #027 **Two hunts for the old `home_status` string compare** — verify at
       the same time: (a) the candidate `wake > bed` midnight flip behaves like
       today (it does — no regression), (b) owner confirms "Sun = weekday-bed"
       axis is intended family behaviour.
-- [ ] #028 **Labels for seasonal sockets** — `switch.p10/p11/p1/p6` handled via
-      `christmas_sockets` group + sync automation today; a **label** would let
-      targeting survive group re-edits and dissolve #020 churn. Current approach
-      works — incremental.
-- [ ] #029 **Scenes vs groups membership duplication** — `scenes/scenes.yaml`
-      re-list the same lights as `groups.yaml`. Keep the in-file "keep in sync"
-      warning honest or derive scenes from groups. Minor.
+- [x] #028 **Labels for seasonal sockets** — **DONE 2026-10-23**: labels
+      `taklampa`/`natthorn`/`sasong`/`utelampa` created + entities assigned;
+      night/ceiling automations target them (`target.label_id`; verified live —
+      `entity_id: label.X` is a silent no-op). `christmas_sockets` group gone.
+- [x] #029 **Scenes vs groups membership duplication** — **RESOLVED 2026-10-23**:
+      groups.yaml now holds only `family`; scene comment points to the labels
+      instead of dead group names.
 - [x] ~~schedule helper migration~~ **Rejected** — native `schedule` helper was
       evaluated as a `home_status` replacement and is the wrong tool for this
       build: no runtime `schedule.set` service (family/agent edit
@@ -92,20 +90,24 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
       **Dashboard rebuilt 2026-10-23 as area cards** (Belysning + Utomhus;
       11 compact cards, diagnostics excluded; area icons set; exporter `9defb98`).
       **#030 DONE.**
-- [ ] #031 **Labels for cross-cutting concerns** — `säsong` (p10/p11/p1/p6),
-      `utebelysning`; target labels from automations instead of group edits.
-      Sharpen/supersede #028. Needs #030.
+- [x] #031 **Labels for cross-cutting concerns** — **DONE 2026-10-23**: labels
+      `taklampa`/`natthorn`/`sasong`/`utelampa` created + assigned; ceiling,
+      night-light, christmas and nattmode automations target them. Groups
+      `ceiling_lamps`/`night_lamps`/`christmas_sockets` deleted.
 - [ ] #032 **Pause-toggle helpers** — `input_boolean.automatik_taklampor` /
       `automatik_nattlampor` / `automatik_uteljus` gate their automations so the
-      family can pause a behavior from the dashboard without editing YAML.
+      family can pause a behavior from the dashboard without editing YAML. With
+      #026 the gate can hook the single ceiling automation's `choose`.
 - [ ] #033 **`next_wake`/`next_bedtime` template sensor** — derived next
       wake/sleep boundary for the dashboard (defer until #024 lands).
 - [ ] #034 **`script.goodnight`** — one voice/dashboard action: ceiling off,
       night-corner dim (`script.nattmode`), doors locked. Manual convenience on
       top of the automatic sleep behavior.
-- [ ] #035 **Christmas sockets via label + scenes/groups de-dup** — target
-      label `säsong` instead of `christmas_sockets` group (resolves #020);
-      scenes.yaml membership follows area ownership. Needs #030/#031.
+- [x] #035 **Christmas sockets via label + scenes/groups de-dup** — **DONE PARTIAL
+      2026-10-23**: label `sasong` replaces the `christmas_sockets` group (#028/
+      #031); scenes keep static membership (scenes can't target labels) but the
+      comment documents the label source. Remaining: a label-driven scene is not
+      possible — leave scenes static.
 
 ## Standing decisions & conventions (binding for future work)
 

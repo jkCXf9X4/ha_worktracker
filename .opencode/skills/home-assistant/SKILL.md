@@ -85,11 +85,10 @@ config at `/config/docs/`.
 
 ## Home topology (key entities)
 
-- Groups (YAML): `group.family` = person.sara + person.erik; `group.ceiling_lamps`
-  (entre_hall_tak, korridor_tak, laslampa_on_off, bokhylla_h); `group.night_lamps`
-  (ute_huvudentre, p4_socket). **Since 2026-10-23:** seasonal sockets live in
-  `group.christmas_sockets` (p10/p11/p1/p6), gated by
-  `input_boolean.christmas_lights` in `night_lights.yaml`. Scenes in
+- Groups (YAML): only `group.family` = person.sara + person.erik remains
+  (2026-10-23). Ceiling/night/christmas roles moved to **labels** (see Labels
+  section): `taklampa`, `natthorn`, `sasong`, `utelampa`. Seasonal sockets are
+  gated by `input_boolean.christmas_lights` in `night_lights.yaml`. Scenes in
   `/config/scenes/scenes.yaml`: `scene.taklampor_pa`, `scene.nattlampor_pa`
   (static presets only — **scenes do not render Jinja templates**). The dynamic
   "Nattmode" (ceiling off + night-corner dim at the helper brightness) is
@@ -105,6 +104,8 @@ config at `/config/docs/`.
   year-round, while `switch.p6` ("Isacs rum sänglampa") sits in
   `group.christmas_sockets`. Suggest p4 be seasonal and p6 a night lamp, but
   that changes live behaviour — confirm with the owner before changing.
+  **RESOLVED 2026-10-23:** P4 plug broke and was physically replaced by P11.
+  `switch.p4_socket` no longer exists. Labels now own these roles (see below).
 - **ZHA migration of the dead Hue bridge COMPLETE (2026-10-21).** All lights and
   plugs are on ZHA (ConBee II) with canonical entity IDs; canonical ID ↔ IEEE
   table in the ZHA section below. Full workbook:
@@ -117,14 +118,37 @@ config at `/config/docs/`.
   expired). 5 Tuya devices, **16 entities**. The outsides/gazebo lights ARE
   Tuya smart plugs:
   - `switch.p10_socket` "Slinga uterum" (gazebo light string, dev P10)
-  - `switch.p11_socket` "Julslinga" (Christmas string, P11) — seasonal, off
+  - `switch.p11_socket` "Julslinga" (Christmas string, P11) — **since 2026-10-23
+    it is the fixture that replaced the broken P4** = the front outdoor light
+    following the daylight machine (utelampa label); nominally `unavailable`
+    while the Tuya cloud is down
   - `switch.p1_socket` "Hörnlampa_vardagsrum" (P1)
   - `switch.p2_socket` (P2)
-  - `switch.p4_socket` (P4, has power/voltage/energy sensors, "Bilvärmare")
   - `light.laundry_nursingtable` (P1 sub-entity "Laundry.NursingTable") and
-    `light.outroom_ballsling` (P4 sub-entity "Outroom.BallSling") — real Tuya
-    light entities, **not** stale refs; show `unavailable` when the plug is
-    physically off/absent (P4/P1 seasonal).
+    `light.outroom_ballsling` — real Tuya light entities, **not** stale refs;
+    show `unavailable` when the plug is physically off/absent (seasonal).
+
+### Labels / areas (built 2026-10-23)
+
+Areas (11) own "where"; **labels** own "role". Groups deleted except `family`.
+
+- Areas: `korridor`=Badrum korridor, `carport_korridor`=Kök korridor, `hall`,
+  `vardagsrum` (incl. lekstuga), `sovrum`, `isacs_rum`, `gastrum`, `hobbyrum`,
+  `kitchen`=Kök, `outsideroom`=Uterum, `utebelysning`. Uteljussensor = house-wide.
+- Labels (slug → membership):
+  - `taklampa` — entre_hall_tak, korridor_tak, color_temperature_light_1,
+    laslampa_on_off, bokhylla_h_light (ceiling lamps; was `group.ceiling_lamps`)
+  - `natthorn` — l3_1, l3_2 (night-corner; was hard-coded in script.nattmode)
+  - `sasong` — p10_socket, p1_socket, p6 (seasonal sockets; was `christmas_sockets`)
+  - `utelampa` — ute_huvudentre, p11_socket (front outdoor, follows daylight;
+    was `group.night_lamps`)
+- **CRITICAL label-targeting gotcha (verified 2026-10-23):** `entity_id: label.X`
+  silently no-ops (success:true, nothing happens). Labels only resolve through
+  `target.label_id: <slug>` (WS/automation channel). `light.turn_*`/`switch.turn_*`
+  also accept `label_id`; `homeassistant.turn_*` accept it too. `area_id` targeting
+  works normally (`light.turn_on` touches only light-domain entities in the area,
+  so `switch.p6` in isacs_rum is NOT lit by the morning fade).
+- Add a lamp to a role = edit the entity's label in the registry, no YAML.
   - Power meters: `sensor.p{4,10,11}_{current,power,voltage,total_energy}`.
 - Registry: UniFi/Tibber/TV entities removed; remaining disabled entities are
   legit default-disabled diagnostics (~227).
@@ -147,19 +171,26 @@ automations + schedule helpers. Migration design + P4 requirements: see
 - Locks on sleep/away (`automations/locks.yaml`); outside-light lux hysteresis
   (400 on / 150 off, **read live from the input_number helpers**
   `outside_light_on/off_threshold` via `above:`/`below:` entity refs)
-  (`outside_light.yaml`); ceiling + night lamps (`ceiling_lights.yaml` —
-  sleep action now `script.turn_on script.nattmode`, `night_lights.yaml`);
-  Sovrum + Isac morning fades (`sovrum.yaml`, `isac_room.yaml`);
+  (`outside_light.yaml`); ceiling + night lamps — **since 2026-10-23 the four
+  ceiling automations are ONE data-driven automation**
+  (`p4_ceiling_lights_follow_home_status_daylight`: state trigger on
+  `home_status`+`light_outside` + a `choose` on the current states; action
+  targets `label.taklampa`; sleep branch runs `script.nattmode`) plus
+  `night_lights.yaml` (targets `label.utelampa` + `label.sasong`);
+  Sovrum + Isac morning fades (`sovrum.yaml`, `isac_room.yaml` — now target the
+  `sovrum`/`isacs_rum` **areas** through `script.light_on_with_transition`,
+  which gained an `area` field);
   single startup grace `00_startup_grace.yaml` (`input_boolean.ha_started`,
   forced off every boot via `initial: false`, on after 2 min; the 1-min/2-min
   split + `ha_started_2min` were removed 2026-10-23).
-- **17 YAML automations active** across `/config/automations/`
+- **12 YAML automations active** across `/config/automations/`
   (include_dir_merge_list). State automations also trigger on
   `input_boolean.ha_started -> on` to reconcile lights/locks after a reboot;
   the outside-light automations re-sync the daylight flag on `homeassistant
   start` (numeric_state alone only fires on a threshold crossing).
-- **17 automation entities, 0 unavailable** (2026-10-23): the 12 orphaned
-  registry entries were removed via WebSocket `config/entity_registry/remove`.
+- **12 automation entities, 0 unavailable** (2026-10-23): the 4 orphaned
+  ceiling registry entries were removed via WebSocket
+  `config/entity_registry/remove`.
 - ZHA remote bindings are **blueprint instances** (added 2026-10-23):
   `automations/hue_dimmer_isacs.yaml` + `styrbar_lekstuga.yaml` use
   `blueprints/automation/zha_remote_lights.yaml` / `zha_remote_switch.yaml`
