@@ -24,10 +24,12 @@
 > sänglampa (p6). Do not flash those.
 
 > Tuya plugs `p1`/`p2`/`p4`/`p11` were `unavailable` during the session (Tuya
-> cloud offline) — not strobed. Assignments applied per owner context:
-> `p4` Bilvärmare → Utebelysning (outdoor, front), `p11` Julslinga →
-> Utebelysning, `p2` Uttag P2 → Kök, `p1` Hörnlampa → Vardagsrum.
-> Re-strobe when Tuya is back online if confirmation wanted.
+> cloud offline) — not strobed. **P4 plug broke and was physically replaced by
+> the P11 plug** (2026-10-23): `switch.p4_socket` is gone from the registry and
+> `switch.p11_socket` took over its role as the front outdoor light following the
+> daylight machine. Applied: `night_lamps` uses `p11`; `christmas_sockets` now
+> `p10`/`p1`/`p6`. `p2` Uttag P2 → Kök, `p1` Hörnlampa → Vardagsrum.
+> Re-strobe the Tuya plugs when back online if confirmation wanted.
 
 ## Applied area registry (2026-10-23) — 11 areas after consolidation
 
@@ -36,3 +38,10 @@
 `Uterum`, `Utebelysning`. Deleted legacy: `CarPort`, `Other`, `Träningsrum`,
 `Ute framsida` (→ Utebelysning), `Kvällsbelysning` (dissolved).
 `Uteljussensor` = house-wide, no room.
+
+## Dashboard rebuilt 2026-10-23 — area cards
+
+Belysning view = control groups + 9 compact area cards; Utomhus = Utebelysning +
+Uterum + Säsongsbelysning; 11 area icons set in the registry. Applied via WS
+`lovelace/config/save`; exporter `9defb98`. Diagnostic entities excluded per
+area (`update.*`, power sensors, child-locks, remote battery).

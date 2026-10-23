@@ -30,12 +30,10 @@ candidates (#024–#029, all waiting on owner decision). Full history:
 
 ## Open work
 
-- [ ] #020 **Seasonal night-lamp grouping (later)** — make the `p10/p11/p1`
-      Christmas sockets a toggleable group so "night lamps" ≠ "Christmas"
-      year-round. Related open question from P10: `switch.p4_socket`
-      (car-heater outlet) rides in `night_lamps` year-round while `switch.p6`
-      (Isac bedside lamp) sits in `christmas_sockets` — behaviour needs owner
-      decision.
+- [x] #020 **Seasonal night-lamp grouping** — **RESOLVED 2026-10-23** (owner):
+      P4 plug broke, P11 physically replaced it and now does the old P4 job as
+      the front outdoor light. `night_lamps` = ute_huvudentre + **p11**;
+      `christmas_sockets` = p10/p1/p6. Applied + reloaded live.
 
 Nothing else is in flight.
 
@@ -91,7 +89,9 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
       Träningsrum/Ute framsida/Kvällsbelysning deleted; all physical devices
       device→area mapped (fished + owner placements, `docs/fishing_log.md`);
       Uteljussensor house-wide. `ha core check` green, exporter `643e941`.
-      Remaining: dashboard Belysning view → area cards (#030 tail).
+      **Dashboard rebuilt 2026-10-23 as area cards** (Belysning + Utomhus;
+      11 compact cards, diagnostics excluded; area icons set; exporter `9defb98`).
+      **#030 DONE.**
 - [ ] #031 **Labels for cross-cutting concerns** — `säsong` (p10/p11/p1/p6),
       `utebelysning`; target labels from automations instead of group edits.
       Sharpen/supersede #028. Needs #030.
