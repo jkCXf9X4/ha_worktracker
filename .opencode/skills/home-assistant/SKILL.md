@@ -283,7 +283,8 @@ recreate as HA groups if ever needed.
   `write_file`, `check_config`, `reload` (`automation|script|group|template`)
   — plus (v0.2.0) **`find_device`** (device-registry lookup by name →
   `device_id`) and **`device_triggers`** (live `device_automation` trigger
-  type/subtype enum). `write_file`/`check_config`/`reload` require an **admin**
+  type/subtype enum), plus (v0.3.0) **`call_service`** (see below).
+  `write_file`/`check_config`/`reload`/`call_service` require an **admin**
   caller (checked via `llm_context.context.user_id` →
   `hass.auth.async_get_user().is_admin`).
 - Security: pure `pathlib`; path canonicalized under `config_dir`; write only
@@ -321,6 +322,37 @@ recreate as HA groups if ever needed.
   registers — no error anywhere. The chat agent's `write_file` cannot catch
   this; instruct it to always write automations as YAML lists.
 - Rollout checklist: `docs/AGENT_TOOLS.md` §5.
+
+### config_tools__call_service (P9 — v0.3.0, deployed + verified 2026-10-23)
+
+- **Purpose:** let the chat agent physically blink/act on lamps via real
+  service params the entity intents can't carry (`flash`, `effect`,
+  `transition`). The `assist` LLM API exposes no generic "any service" toggle;
+  HA's `ActionTool` is script-only for schemas → custom tool in `config_tools`.
+- **Allowlist** (`const.py::ALLOWED_SERVICE_ACTIONS`, single source of truth):
+  `light|switch` `turn_on`/`turn_off`/`toggle` only. `group.*` targets work via
+  core group expansion.
+- **Blink = `light.turn_on` + `data={"flash": "short"|"long"}`.** Feature-bit
+  background: ZHA lights report `supported_features` 40 = FLASH(8)+
+  TRANSITION(32); the intents can't express flash, so prefer the service tool.
+- **Gating:** admin (`_is_admin`, toggle-able to exposure-bound any-user) +
+  **exposure boundary** — target must be in the entity registry AND
+  `homeassistant.exposed_entities.async_should_expose(hass,
+  llm_context.assistant, entity_id)` (assistant == `"conversation"` for the
+  OpenRouter pipeline). Service schema validation runs in
+  `hass.services.async_call(blocking=True)` → bad fields return the real
+  Voluptuous error to the model. Returns re-read `state` + `attributes`.
+- **Verify recipe (done 2026-10-23):** `conversation/process` prompting the
+  exact tool + entity. Discriminator tool-vs-intent: `response.data.success`
+  stays `[]` for the tool (an entity intent populates `success`). Trust state,
+  not the reply — force `light.turn_off` and watch the state flip, then back on.
+  Bogus field e.g. `data={"bogus_field":123}` → verbatim
+  `Service call failed: not a valid option at 'bogus_field'`.
+- **GOTCHA found during deploy:** the VM's old v0.2.0 `_device_entity_ids` used
+  `registry.get_entries_for_device_id` (EntityRegistry) → AttributeError —
+  repo version uses `registry.entities.get_entries_for_device_id` (HA 2026.10);
+  ensure pushed files md5-match (mirror == VM == repo). Exporter push `989e5a0`.
+- Plan + findings: `docs/call_service_tool_P9_PLAN.md`.
 
 ## Gotchas / lessons learned
 

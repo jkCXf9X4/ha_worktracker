@@ -13,6 +13,13 @@ that flow). The 5 schedule-writer scripts were **removed** from `scripts.yaml`
 (owner decision: *Remove them entirely*) — schedule edits now go through
 generic tools + live helper state is out of the agent's reach.
 
+**P9 (2026-10-23): `config_tools__call_service` is DEPLOYED + VERIFIED live
+(v0.3.0)** — component + handbook on the VM, core restarted, exercised through
+the chat agent (real `light.turn_off`/`turn_on` state change with empty intent
+`success` = tool path; bogus `data` field returned the real HA validation error
+verbatim). Exporter push `989e5a0`. §3.6 documents design/mechanism; rollout +
+findings in `docs/call_service_tool_P9_PLAN.md`.
+
 Design (mechanism + rationale) below; rollout executed per §5.
 
 Gives the family chat agent bounded read/write control over the YAML config:
@@ -59,9 +66,9 @@ appear in the same `assist` API the OpenRouter agent already uses.
 
 ## 3. Tools (domain `config_tools`) — implemented
 
-All **7** are implemented in `custom_components/config_tools/`:
+All **8** are implemented in `custom_components/config_tools/`:
 `manifest.json` (`platforms: ["llm"]`), `__init__.py` (`CONFIG_SCHEMA =
-cv.empty_config_schema`), `llm.py` (`async_get_tools` returns all seven tools
+cv.empty_config_schema`), `llm.py` (`async_get_tools` returns all tools
 for `api_id == "assist"`), `tools.py` (pure-Python + HA registry/device-automation
 helpers; no shell, no new deps).
 
@@ -115,6 +122,44 @@ helpers; no shell, no new deps).
 - Hard rule for the agent: **never guess trigger type/subtype; call this tool
   and use exactly what it returns.** (Same lifecycle source as the old `bind_remote`
   plan, now exposed as read-only tools + generic `write_file` for the actual edit.)
+
+### `config_tools__call_service` — P9 (v0.3.0, **dep + verified live 2026-10-23**)
+- **Why:** the `assist` LLM API only surfaces entity intents + exposed scripts +
+  custom `llm` platform tools; there is no generic "expose any service" toggle.
+  HA's built-in `ActionTool` (helpers/llm.py) is script-only for schemas (its
+  param cache covers scripts, not arbitrary services) → we build the tool
+  ourselves. ZHA lights report `supported_features` = `40` = FLASH(8)+
+  TRANSITION(32), so blinking via `light.turn_on` `flash:` is physically
+  supported — but entity intents (`light__HassLightSet`) can't carry `flash`/
+  `effect`/`transition`.
+- **Allowlist** (single source of truth in `const.py`):
+
+  | domain   | services                         |
+  |----------|----------------------------------|
+  | `light`  | `turn_on`, `turn_off`, `toggle`  |
+  | `switch` | `turn_on`, `turn_off`, `toggle`  |
+
+  `group.*` entities work through core's group expansion. Extend later on
+  request (e.g. `scene`, `homeassistant.turn_*`).
+- params: `service` (e.g. `"light.turn_on"`), `entity_id` (ONE exposed entity,
+  single target keeps it simple + bounded; groups cover multi-light cases),
+  `data` (optional free-form object for service fields: `flash`,
+  `brightness_pct`, `transition`, `effect`, …).
+- Flow: split `service` → `domain.service_name` → allowlist check (else error
+  listing allowed services) → **admin gate** (`_is_admin`, same as
+  `write_file`/`reload`) → target must exist in the **entity registry** AND be
+  exposed to `llm_context.assistant` via
+  `homeassistant.exposed_entities.async_should_expose` (exposure boundary) →
+  `service_data = {**data, "entity_id": entity_id}` → the tool runs HA's own
+  schema validation by calling
+  `hass.services.async_call(..., blocking=True)` (bad/typo'd fields return the
+  real Voluptuous error to the model) → re-reads the entity state and returns
+  `{"result": "ok", "entity_id", "state", "attributes"}`; all failures relayed
+  with `error=True`.
+- Admin gating decision is per-deployment: plan = **admin-gated**; relax to
+  "any logged-in user, exposure-bound" if family members must blink too.
+- Component layout addition: `const.py` (`ALLOWED_SERVICE_ACTIONS`), `tools.py`
+  (`CallServiceTool`), `llm.py` (8th tool), `manifest.json` → `0.3.0`.
 
 ### `config_tools__bind_remote` — **NOT BUILT** *(superseded by v0.2.0 tools)*
 - **Owner decision 2026-10-22: "way too specific" → dropped.** Its two real
