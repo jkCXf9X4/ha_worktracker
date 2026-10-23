@@ -84,16 +84,14 @@ Nothing deployed — each waits on ⬜ owner decision before edit.
 Live registry research (areas + device map pulled read-only over SSH) + full
 best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision.
 
-- [ ] #030 **Normalize area registry + map all devices** — area review done
-      (2026-10-23): 15 areas, 8/46 devices mapped; owner corrections applied.
-      **Plan (`docs/deep_dive_organization.md`):** delete empty legacy `CarPort`,
-      `Other`, `Träningsrum`; `Kitchen`→keep as **Kök**; `Carport korridor`→
-      **Kök korridor**; `Hall`→**Entré hall**; `Korridor`→**Badrum korridor**;
-      `Ute framsida`→merge into **Utebelysning** (outdoor, front+back);
-      `OutsideRoom`→**Uterum**; dissolve `Kvällsbelysning` (P10→Uterum,
-      P11→Utebelysning); `Uteljussensor` house-wide (no room). Then assign ALL
-      physical devices to rooms; dashboard Belysning → area cards. Owner OK on
-      remaining device-map proposals (l3_1/l3_2/P4/P2, new Lekstuga/Hobbyrum).
+- [x] #030 **Normalize area registry + map all devices** — **APPLIED 2026-10-23**:
+      area registry consolidated+renamed live (11 areas: Entré hall, Kök
+      korridor, Badrum korridor, Vardagsrum, Sovrum, Isacs rum, Gästrum,
+      Hobbyrum(new), Kök, Uterum, Utebelysning); legacy CarPort/Other/
+      Träningsrum/Ute framsida/Kvällsbelysning deleted; all physical devices
+      device→area mapped (fished + owner placements, `docs/fishing_log.md`);
+      Uteljussensor house-wide. `ha core check` green, exporter `643e941`.
+      Remaining: dashboard Belysning view → area cards (#030 tail).
 - [ ] #031 **Labels for cross-cutting concerns** — `säsong` (p10/p11/p1/p6),
       `utebelysning`; target labels from automations instead of group edits.
       Sharpen/supersede #028. Needs #030.

@@ -273,15 +273,25 @@ superseded/sharpen by #031).
 
 ## Owner decisions needed before any edit
 
-Resolved 2026-10-23: Kitchen real room (keep as Kök, no smart lights),
-Korridor = bathroom corridor (→Badrum korridor), P11 Julslinga outdoor
-(→Utebelysning), Uteljussensor house-wide, Utebelysning = outdoor lighting
-front+back, Carport korridor = kitchen corridor, Kvällsbelysning not an area.
+**Resolved + APPLIED 2026-10-23** (area registry live on the VM, exporter
+`643e941`, `ha core check` green):
 
-Still open (small, for the device-map execution round):
-1. Device placements proposed but unconfirmed: `l3_1`→Entré hall, `l3_2`→Kök
-   korridor, `Bilvärmare (P4)`→Utebelysning, `Uttag P2`→Kök.
-2. New areas `Lekstuga` (isac_lekstuga + STYRBAR) and `Hobbyrum`
-   (hobbyrum fönster) — create, or map those devices to existing areas?
-3. Enable pause toggles (#032), `goodnight` script (#034)?
-4. Christmas sockets: switch from group to label (#035) — resolves #020?
+- Kitchen real room → kept as `Kök` (no smart lights).
+- `Korridor` = bathroom corridor → **Badrum korridor**.
+- `P11` Julslinga + `P4` Bilvärmare → **Utebelysning** (outdoor, front+back).
+- `Uteljussensor` house-wide (no room area).
+- `Carport korridor` → **Kök korridor**; `Kvällsbelysning` dissolved
+  (P10→Uterum, P11→Utebelysning); `Ute framsida` merged → Utebelysning.
+- Deleted legacy: `CarPort`, `Other`, `Träningsrum`.
+- **Fished + mapped (confirmed by blinking):** l3_1/l3_2 → Kök korridor;
+  korridor_tak/Korridor 2 → Badrum korridor; entre_hall_tak → Entré hall;
+  gastrum_tak + laslampa → Gästrum; dimmer_fixed_livingroom_light +
+  bokhylla + isac_lekstuga + STYRBAR → Vardagsrum; dimmer_fixed_bedroom_light_2
+  → Sovrum; ute_huvudentre → Utebelysning; hobby_rum_fonster → Hobbyrum (new);
+  p10 → Uterum; p2 → Kök. Full log: `docs/fishing_log.md`.
+
+Remaining (small):
+1. Enable pause toggles (#032), `goodnight` script (#034)?
+2. Christmas sockets: switch from group to label (#035) — resolves #020?
+3. Dashboard Belysning view: switch room cards to **area cards** (membership now
+   lives in the registry).

@@ -1,6 +1,7 @@
 # Light identification — fishing log (2026-10-23)
-# Confirmed by physically watching each blink. Read-only; used to seed the
-# device->area map in docs/deep_dive_organization.md.
+# Confirmed by physically watching each blink. **APPLIED to the VM 2026-10-23**
+# (device->area assignments live; exporter `643e941`; `ha core check` green).
+# Used to seed the device->area map in docs/deep_dive_organization.md.
 
 | Entity | Friendly | Physical location (confirmed) | Area |
 |--------|----------|-------------------------------|------|
@@ -23,7 +24,15 @@
 > sänglampa (p6). Do not flash those.
 
 > Tuya plugs `p1`/`p2`/`p4`/`p11` were `unavailable` during the session (Tuya
-> cloud offline) — not strobed. Owner placements from earlier context:
-> `p4` Bilvärmare → Utebelysning, `p11` Julslinga → Utebelysning (outdoor),
-> `p2` → Kök (proposed), `p1` Hörnlampa → Vardagsrum (already in registry).
-> Re-strobe when Tuya is back online if needed.
+> cloud offline) — not strobed. Assignments applied per owner context:
+> `p4` Bilvärmare → Utebelysning (outdoor, front), `p11` Julslinga →
+> Utebelysning, `p2` Uttag P2 → Kök, `p1` Hörnlampa → Vardagsrum.
+> Re-strobe when Tuya is back online if confirmation wanted.
+
+## Applied area registry (2026-10-23) — 11 areas after consolidation
+
+`Entré hall`, `Kök korridor`, `Badrum korridor`, `Vardagsrum` (incl. lekstuga),
+`Sovrum`, `Isacs rum`, `Gästrum`, `Hobbyrum` (new), `Kök` (empty room),
+`Uterum`, `Utebelysning`. Deleted legacy: `CarPort`, `Other`, `Träningsrum`,
+`Ute framsida` (→ Utebelysning), `Kvällsbelysning` (dissolved).
+`Uteljussensor` = house-wide, no room.
