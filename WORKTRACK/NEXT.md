@@ -6,7 +6,7 @@ Forward-looking tracker, distilled 2026-10-22 from the archived logs in
 "where are we, what's next".
 
 Snapshot owner: build agent. Update after every working session.
-Last updated: 2026-10-22
+Last updated: 2026-10-23
 
 ## Phase state
 
@@ -139,6 +139,36 @@ rotated.** Build milestones done; remaining items are optional enhancements
          reach — family changes schedules via dashboard pickers).
        - Cleanup left: stale inert `conversation` exposure entries for the old
          script entities (harmless; entities don't exist anymore).
+
+- [x] #023 **P10 config review patch (2026-10-23)** — critical review + fixes to
+      automations/scripts/helpers/scenes, deployed + verified live (exporter
+      `c55930a`, mirror == VM):
+      - **Startup grace was broken:** `input_boolean.ha_started` restored `on`
+        from the previous session, so the 2-min gate never applied after a
+        reboot. Now `initial: false` + explicit turn-off on start.
+      - **Family schedule edits were reset every boot:** `initial:` on all
+        `input_datetime`/`input_number` helpers re-applies the default on every
+        HA start, overriding the restored value. Removed from all schedule
+        helpers (standard values documented in `tools/summarize.py::DEFAULTS`).
+      - **Sleep scene was broken:** YAML scenes do not render Jinja, so
+        `scene.nattmode`'s templated `brightness` was invalid. Replaced by
+        `script.nattmode` (dynamic night-corner brightness); two static scenes
+        remain.
+      - **Restart reconciliation:** outside-light automations re-sync the
+        daylight flag on `homeassistant start`; ceiling/night/lock automations
+        trigger on `ha_started -> on` with full state conditions.
+      - **Christmas helper applies immediately** via a new sync automation;
+        helper no longer forced on at boot (restores).
+      - **Simplifications:** one `lock.lock` call for both doors; script field
+        defaults/selectors; unused `time_date` platform removed; logger default
+        `warning`; fuller `home_status` availability; `trigger:`/`action:` YAML
+        style + `trigger: device` in both blueprints.
+      - **Registry cleanup:** 12 orphaned `unavailable` automation entities
+        removed via WebSocket (17 active, 0 unavailable); stale helper friendly
+        name fixed.
+      - **Open question:** `switch.p4_socket` (car-heater outlet) is in
+        `night_lamps` year-round while `switch.p6` (Isac bedside lamp) is in
+        `christmas_sockets` — needs owner decision (behaviour change).
 
 ## Standing decisions & conventions (binding for future work)
 

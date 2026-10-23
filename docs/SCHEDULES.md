@@ -4,7 +4,7 @@ Automatiskt genererat av `tools/summarize.py` — **ändra aldrig den här filen
 
 ## Schema-hjälpvariabler (input_*)
 
-| Enhet | Beskrivning | Värde-id | Fil |
+| Enhet | Beskrivning | Standard | Fil |
 |-------|-------------|----------|-----|
 | `input_datetime.wake_time_weekday` | Wake time Mon-Fri (tid) | 06:45 | `input_datetime/schedules.yaml` |
 | `input_datetime.wake_time_weekend` | Wake time Sat-Sun (tid) | 06:45 | `input_datetime/schedules.yaml` |

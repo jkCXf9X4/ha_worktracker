@@ -21,6 +21,29 @@ except ImportError:
 REPO = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG = REPO / "ha_config" / "config"
 
+# Documented standard values. The live helpers deliberately have no YAML
+# `initial:` (that would reset the family's edits on every HA start); HA
+# restores the last value instead. Keep this table in sync with the dashboard.
+DEFAULTS = {
+    "input_datetime.wake_time_weekday": "06:45",
+    "input_datetime.wake_time_weekend": "06:45",
+    "input_datetime.bedtime_weekday": "21:00",
+    "input_datetime.bedtime_weekend": "21:30",
+    "input_datetime.sovrum_on_time": "06:22",
+    "input_datetime.sovrum_off_time": "09:36",
+    "input_datetime.isac_on_time": "06:30",
+    "input_number.sovrum_brightness": 200,
+    "input_number.isac_brightness": 200,
+    "input_number.night_corner_brightness": 56,
+    "input_number.outside_light_on_threshold": 400,
+    "input_number.outside_light_off_threshold": 150,
+}
+
+
+def trigger_kind(trigger: dict) -> str | None:
+    """Return the trigger type for both old (`platform:`) and new YAML styles."""
+    return trigger.get("trigger") or trigger.get("platform")
+
 
 def load_yaml(path: Path):
     try:
@@ -114,7 +137,7 @@ def describe_automation(a: dict) -> str:
     time_at = []
     weekdays = []
     for t in trig:
-        p = t.get("platform")
+        p = trigger_kind(t)
         if p == "time":
             if ta := trigger_time(t):
                 time_at.append(ta)
@@ -123,7 +146,10 @@ def describe_automation(a: dict) -> str:
         elif p == "homeassistant":
             bits.append("vid HA-start" if t.get("event") == "start" else "HA-händelse")
         elif p == "state":
-            bits.append(f"när {t.get('entity_id')} → {t.get('to')}")
+            if t.get("to") is None:
+                bits.append(f"när {t.get('entity_id')} ändras")
+            else:
+                bits.append(f"när {t.get('entity_id')} → {t.get('to')}")
         elif p == "numeric_state":
             above = t.get("above")
             below = t.get("below")
@@ -188,7 +214,7 @@ def render_schedules(helpers: dict, automations: list[dict]) -> str:
     lines.append("")
     lines.append("## Schema-hjälpvariabler (input_*)")
     lines.append("")
-    lines.append("| Enhet | Beskrivning | Värde-id | Fil |")
+    lines.append("| Enhet | Beskrivning | Standard | Fil |")
     lines.append("|-------|-------------|----------|-----|")
     sched_keys = ["input_datetime.wake_time_weekday", "input_datetime.wake_time_weekend",
                   "input_datetime.bedtime_weekday", "input_datetime.bedtime_weekend",
@@ -204,7 +230,7 @@ def render_schedules(helpers: dict, automations: list[dict]) -> str:
         cfg = h["config"]
         name = cfg.get("name", key)
         kind = "tid" if cfg.get("has_time") else "siffra"
-        lines.append(f"| `{key}` | {name} ({kind}) | {cfg.get('initial', '—')} | `{h['file']}` |")
+        lines.append(f"| `{key}` | {name} ({kind}) | {DEFAULTS.get(key, '—')} | `{h['file']}` |")
     lines.append("")
     lines.append("## Tidstyrda automations")
     lines.append("")
@@ -214,12 +240,12 @@ def render_schedules(helpers: dict, automations: list[dict]) -> str:
         trig = a.get("trigger") or []
         if not isinstance(trig, list):
             trig = [trig]
-        if not any(t is not None and t.get("platform") == "time" for t in trig):
+        if not any(t is not None and trigger_kind(t) == "time" for t in trig):
             continue
         alias = a.get("alias", a.get("id", "?"))
         when = []
         for t in trig:
-            if t is not None and t.get("platform") == "time":
+            if t is not None and trigger_kind(t) == "time":
                 if ta := trigger_time(t):
                     when.append(ta)
         conds = a.get("condition")
@@ -259,7 +285,7 @@ def render_automations(automations: list[dict]) -> str:
             trig = [trig]
         when = []
         for t in trig:
-            p = t.get("platform")
+            p = trigger_kind(t)
             if p == "time":
                 ta = trigger_time(t)
                 when.append(ta or "klockslag")
@@ -268,7 +294,10 @@ def render_automations(automations: list[dict]) -> str:
             elif p == "homeassistant":
                 when.append("HA-start" if t.get("event") == "start" else "HA-händelse")
             elif p == "state":
-                when.append(f"{t.get('entity_id')} → {t.get('to')}")
+                if t.get("to") is None:
+                    when.append(f"{t.get('entity_id')} ändras")
+                else:
+                    when.append(f"{t.get('entity_id')} → {t.get('to')}")
             elif p == "numeric_state":
                 above = t.get("above")
                 below = t.get("below")
@@ -306,7 +335,7 @@ def render_automations(automations: list[dict]) -> str:
     lines.append("## Läs mer")
     lines.append("")
     lines.append("- `docs/PLAN.md` — hela bygget · `docs/ADMIN.md` — drift/återställning")
-    lines.append("- Familjen: ringa schemat i appen/chatten (agenten styr samma `input_*`).")
+    lines.append("- Familjen ändrar schemat själv i appen (dashboard). Värdena sparas och överlever omstart.")
     lines.append("")
     return "\n".join(lines)
 
@@ -347,7 +376,7 @@ def main() -> None:
         if not isinstance(trig, list):
             trig = [trig]
         for t in trig:
-            if t.get("platform") == "time" and (at := t.get("at")):
+            if trigger_kind(t) == "time" and (at := t.get("at")):
                 if isinstance(at, str):
                     for token in at.split():
                         if token.startswith("input_") and token not in refs:

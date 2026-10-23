@@ -89,14 +89,22 @@ config at `/config/docs/`.
   (entre_hall_tak, korridor_tak, laslampa_on_off, bokhylla_h); `group.night_lamps`
   (ute_huvudentre, p4_socket). **Since 2026-10-23:** seasonal sockets live in
   `group.christmas_sockets` (p10/p11/p1/p6), gated by
-  `input_boolean.christmas_lights` (default on) in `night_lights.yaml`. Scenes in
-  `/config/scenes/scenes.yaml`: `scene.nattmode` (ceiling off + night-corner dim),
-  `scene.taklampor_pa`, `scene.nattlampor_pa`. Cleaned 2026-10-21: only
+  `input_boolean.christmas_lights` in `night_lights.yaml`. Scenes in
+  `/config/scenes/scenes.yaml`: `scene.taklampor_pa`, `scene.nattlampor_pa`
+  (static presets only — **scenes do not render Jinja templates**). The dynamic
+  "Nattmode" (ceiling off + night-corner dim at the helper brightness) is
+  `script.nattmode` in `scripts.yaml`. Cleaned 2026-10-21: only
   live entities remain (kontor_on_off/koket_on_off never existed; bokhylla_v +
   others purged).
 - Locks (Yale via `doorman`): `lock.back`, `lock.main`, `lock.carport`.
 - Outside-light sensor (ZHA/Aqara): `sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance` —
-  battery, unavailable since 2026-10-19T11:03Z (needs battery; keep device).
+  live again 2026-10-23 (~58 lux at dusk); it is battery-powered, so watch for
+  `unavailable` if the night/day automations stop reacting.
+- **Open grouping question (owner input needed):** `switch.p4_socket` is a
+  "Bilvärmaruttag" (car-heater outlet) yet sits in `group.night_lamps`
+  year-round, while `switch.p6` ("Isacs rum sänglampa") sits in
+  `group.christmas_sockets`. Suggest p4 be seasonal and p6 a night lamp, but
+  that changes live behaviour — confirm with the owner before changing.
 - **ZHA migration of the dead Hue bridge COMPLETE (2026-10-21).** All lights and
   plugs are on ZHA (ConBee II) with canonical entity IDs; canonical ID ↔ IEEE
   table in the ZHA section below. Full workbook:
@@ -140,12 +148,18 @@ automations + schedule helpers. Migration design + P4 requirements: see
   (400 on / 150 off, **read live from the input_number helpers**
   `outside_light_on/off_threshold` via `above:`/`below:` entity refs)
   (`outside_light.yaml`); ceiling + night lamps (`ceiling_lights.yaml` —
-  sleep action now `scene.turn_on scene.nattmode`, `night_lights.yaml`);
+  sleep action now `script.turn_on script.nattmode`, `night_lights.yaml`);
   Sovrum + Isac morning fades (`sovrum.yaml`, `isac_room.yaml`);
   single startup grace `00_startup_grace.yaml` (`input_boolean.ha_started`,
-  2 min; the 1-min/2-min split + `ha_started_2min` were removed 2026-10-23).
-- **16 YAML automations active** across `/config/automations/`
-  (include_dir_merge_list).
+  forced off every boot via `initial: false`, on after 2 min; the 1-min/2-min
+  split + `ha_started_2min` were removed 2026-10-23).
+- **17 YAML automations active** across `/config/automations/`
+  (include_dir_merge_list). State automations also trigger on
+  `input_boolean.ha_started -> on` to reconcile lights/locks after a reboot;
+  the outside-light automations re-sync the daylight flag on `homeassistant
+  start` (numeric_state alone only fires on a threshold crossing).
+- **17 automation entities, 0 unavailable** (2026-10-23): the 12 orphaned
+  registry entries were removed via WebSocket `config/entity_registry/remove`.
 - ZHA remote bindings are **blueprint instances** (added 2026-10-23):
   `automations/hue_dimmer_isacs.yaml` + `styrbar_lekstuga.yaml` use
   `blueprints/automation/zha_remote_lights.yaml` / `zha_remote_switch.yaml`
@@ -266,7 +280,8 @@ recreate as HA groups if ever needed.
     script + `description` + `stop`/`response_variable`, then
     `homeassistant/expose_entity`.
 - **Exposure**: all live entities exposed to `conversation` (all-in) except
-  `sensor.time/date/date_time_iso`, `sun.sun`, `zone.home`. WebSocket
+  `sun.sun`, `zone.home` (the unused `time_date` platform was removed
+  2026-10-23, so `sensor.time/date*` no longer exist). WebSocket
   `homeassistant/expose_entity {assistants,entity_ids,should_expose}`;
   `homeassistant/expose_entity/list` to verify. Note: only entities where
   `async_should_expose` is true become LLM tools/index entries.
@@ -416,10 +431,23 @@ recreate as HA groups if ever needed.
   local/<name>.yaml` and the automation is silently `unavailable`). Device
   selectors take `integration:` (not `domain:`). YAML 1.1 footgun: unquoted
   `on`/`off` become booleans — quote trigger/conditions `id:`/`state:` values.
+- **Scenes are NOT templated**: scene `entities` attributes are stored as
+  literal values (`_convert_states` in `components/homeassistant/scene.py`), so
+  a Jinja string for `brightness:` silently fails the light call. Use a script
+  (or `scene.apply` inside one) for dynamic values — hence `script.nattmode`.
+- **`initial:` on `input_datetime`/`input_number` resets family edits**: the
+  value is re-applied on **every** HA start, overriding the restored state.
+  Removed from all schedule helpers 2026-10-23; they now restore. Keep documented
+  standard values in `tools/summarize.py::DEFAULTS` instead.
+- **Friendly-name registry override**: a UI-set name wins over YAML `name:`
+  (live `input_boolean.ha_started` kept the old "HA startat (1 min)"). Fix with
+  WebSocket `config/entity_registry/update` (`entity_id` + `name`), or the UI —
+  not by editing YAML.
 - **Purging stale entities**: when automations are replaced/renamed, the old
   registry entities stay `unavailable` (e.g. the retired `ha_started_2min`,
-  the 8 old per-button remote automations). Harmless; removal must be done in
-  the UI or by editing `.storage/core.entity_registry` (risky, not automated).
+  the 8 old per-button remote automations). Safe automated removal:
+  WebSocket `config/entity_registry/remove` per `entity_id` (done 2026-10-23;
+  avoids hand-editing `.storage/core.entity_registry`).
 
 ## How to grow this skill
 
