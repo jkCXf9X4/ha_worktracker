@@ -183,29 +183,40 @@ automations + schedule helpers. Migration design + P4 requirements: see
   single startup grace `00_startup_grace.yaml` (`input_boolean.ha_started`,
   forced off every boot via `initial: false`, on after 2 min; the 1-min/2-min
   split + `ha_started_2min` were removed 2026-10-23).
-- **12 YAML automations active** across `/config/automations/`
+- **11 YAML automations active** across `/config/automations/`
   (include_dir_merge_list). State automations also trigger on
   `input_boolean.ha_started -> on` to reconcile lights/locks after a reboot;
-  the outside-light automations re-sync the daylight flag on `homeassistant
+  the outside-light automation re-syncs the daylight flag on `homeassistant
   start` (numeric_state alone only fires on a threshold crossing).
-- **12 automation entities, 0 unavailable** (2026-10-23): the 4 orphaned
-  ceiling registry entries were removed via WebSocket
+- **11 automation entities + 9 scripts, 0 unavailable** (2026-10-23): twin
+  on/off pairs collapsed 6→3 (`night_lights`, `locks`, `outside_light`); the
+  4 orphaned ceiling registry entries + 6 more orphans (old lock/night/outside
+  pairs + leftover `set_*` scripts) were purged via WebSocket
   `config/entity_registry/remove`.
+- **Scenes removed 2026-10-23** — `scenes.yaml` deleted: the 2 static scenes
+  duplicated the taklampa/utelampa labels 1:1 and scenes can't target labels.
+  Replaced by label-driven scripts (`script.taklampa_pa` = taklampa on,
+  `script.uteljus_pa` = utelampa on). Scenes cannot render Jinja — keep dynamic
+  presets in scripts (`script.nattmode`).
 - **Automations are thin "when" wrappers** (2026-10-23): the actual light/lock
   behavior lives in **scripts** (behavior boxes) so automations are just
   trigger→condition→`script.X`:
   - `script.uteljus_pa/av` — front outdoor (`label.utelampa`) + seasonal
     (`label.sasong`); the **only** place the `christmas_lights` rule exists.
-    night_lights.yaml just calls them.
+    night_lights.yaml is a single `to: [on, off]` trigger + one `choose`.
+  - `script.taklampa_pa` — ceiling lamps (`label.taklampa`) on.
   - `script.sasong_sync` — resolves `sasong` from `christmas_lights`+`light_outside`
     (christmas toggle automation calls it).
-  - `script.lock_doors` — locks back+main; used by locks.yaml (×2) + `goodnight`.
+  - `script.lock_doors` — locks back+main; used by locks.yaml (single merged
+    `to: [sleep, away]` automation) + `goodnight`.
   - `script.goodnight` — composes `nattmode` + `lock_doors` (voice "god natt").
   - `script.nattmode` — ceiling off (`taklampa`) + night-corner dim (`natthorn`).
   - `script.light_on_with_transition` — fade a light **or** an area (sovrum/isac).
 - **Pause toggles** (2026-10-23): `input_boolean.automatik_taklampor` /
-  `automatik_nattlampor` gate the ceiling and night automations — family can
-  pause a behavior from the dashboard (Automatik card on the Belysning view).
+  `automatik_nattlampor` / `automatik_las` gate the ceiling, night and lock
+  automations — family can pause a behavior from the dashboard (Automatik card,
+  Belysning view). **Gotcha**: the `automation.trigger` service bypasses
+  conditions — verify gates with a real state change or `test_condition` WS API.
 - Dashboard views (2026-10-23): overview, belysning (Automatik card + 9 area
   cards), utomhus (2 areas + Säsongsbelysning = p10/p1/p6), historik, schema.
   Energi view removed (had only the dead `sensor.p4_power`).

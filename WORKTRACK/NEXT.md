@@ -99,6 +99,8 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
       (default on, restored across restarts). Ceiling automation and both night
       automations gated on their toggle. `automatik_uteljus` not added — the
       daylight flag (`light_outside`) is the sensor, not a behavior worth pausing.
+      **Ext 2026-10-23**: + `automatik_las` gate for the merged lock automation;
+      Automatik card shows all 3 toggles.
 - [ ] #033 **`next_wake`/`next_bedtime` template sensor** — derived next
       wake/sleep boundary for the dashboard (defer until #024 lands).
 - [x] #034 **`script.goodnight`** — **DONE 2026-10-23**: composes `script.nattmode`
@@ -107,8 +109,30 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
 - [x] #035 **Christmas sockets via label + scenes/groups de-dup** — **DONE PARTIAL
       2026-10-23**: label `sasong` replaces the `christmas_sockets` group (#028/
       #031); scenes keep static membership (scenes can't target labels) but the
-      comment documents the label source. Remaining: a label-driven scene is not
-      possible — leave scenes static.
+      comment documents the label source. **Superseded 2026-10-23**: scenes
+      deleted entirely (see round below) — labels + scripts fully replace them.
+- [x] **Script behavior-boxes + twin-automation collapse round** — **DONE
+      2026-10-23**:
+      - `scripts/uteljus_pa`, `uteljus_av`, `sasong_sync`, `lock_doors`,
+        `goodnight`, `taklampa_pa` (label-driven one-taps replacing the static
+        scenes); `nattmode` + `light_on_with_transition` (area param) from #026.
+      - Twin automations collapsed 6→3: `night_lights` (`to: [on, off]` + one
+        `choose` on `light_outside`→`uteljus_pa`/`uteljus_av`), `locks`
+        (`to: [sleep, away]`→`lock_doors`, gated on `automatik_las`),
+        `outside_light` (both thresholds + one `choose` on current lux).
+      - `scenes.yaml` deleted — the 2 static scenes duplicated the taklampa /
+        utelampa labels 1:1 and scenes can't target labels. `script.taklampa_pa`
+        (= label taklampa) + `script.uteljus_pa` (= label utelampa) replace them.
+      - 6 orphaned registry entities purged via WebSocket (old `p4_lock_doors_*`,
+        `p4_night_lamps_*`, `p4_outside_daylight_flag_*` + 5 leftover `set_*`
+        scripts from an earlier cleanup). Result: 11 automations + 9 scripts,
+        0 unavailable.
+      - Verified live on the real trigger path: `automatik_las` gate blocks/rises
+        lock on the `ha_started` boot re-trigger; night fully off in bright /
+        all on after dark; `taklampa_pa` turns all 5 fixtures on. Note: the
+        `automation.trigger` *service* bypasses conditions — use real state
+        changes or `test_condition` to verify gates.
+      - `ha core check` green, exporter `3e94474`.
 
 ## Standing decisions & conventions (binding for future work)
 
