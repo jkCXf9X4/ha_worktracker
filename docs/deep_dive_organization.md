@@ -29,7 +29,22 @@ Only 8 of 46 devices are assigned to an area**; 15 physical devices are
   delete).
 - **`Kvällsbelysning` is NOT an area** — those are window/holiday lights that
   belong to their actual rooms. Dissolve it: `Slinga uterum (P10)` → `Uterum`;
-  `Julslinga (P11)` → the room whose window it decorates.
+  `Julslinga (P11)` → outdoor, so → **`Utebelysning`** (owner).
+- **`Kitchen` is a real room** but has no smart lights — **keep** (as `Kök`).
+  (owner)
+- **`Korridor` = the bathroom corridor** → rename **`Badrum korridor`** (owner).
+- **`Carport ingång (l3_2)` and `Groventre (l3_1)`** — "night-corner" corridor
+  lights (see skill: night-corner `light.l3_1`/`l3_2`). Proposal:
+  `l3_2` → `Kök korridor` (carport entry = kitchen corridor), `l3_1` →
+  `Entré hall` (groventré). **Owner confirm** in the device-map round.
+
+### Owner corrections (2026-10-23) — final decisions on the area questions
+
+| Question | Answer |
+|----------|--------|
+| `Kitchen` room | **Real room**, keep (as `Kök`) — no smart lights, stays empty |
+| `Korridor` = bathroom corridor? | **Yes** → rename `Badrum korridor` |
+| `P11 Julslinga` (was Kvällsbelysning) | **Outdoor** → `Utebelysning` |
 
 ### Area review — consolidation targets (concrete)
 
@@ -44,9 +59,9 @@ is dead, these are scaffolding, not rooms).
 | `Gästrum` | 0 | Real room, keep — seed with `Gästrum tak` + `Gästrum fönster` |
 | `Hall` | 0 | Real room, keep → rename `Entré hall` — seed with `Entré hall tak` |
 | `Isacs rum` | 0 | Real room, keep — seed with `Isacs rum tak` + `Isacs sänglampa` + `Hue-dimmer Isacs` |
-| `Kitchen` | 0 | **EMPTY legacy, no devices** — delete or keep as Kök (owner) |
-| `Korridor` | 0 | Real corridor — likely the **bathroom corridor** → rename `Badrum korridor`? (owner confirm) |
-| `Kvällsbelysning` | 2 (`P10`,`P11`) | **Dissolve** — window/holiday lights → their real rooms (P10→Uterum, P11→window room) |
+| `Kitchen` | 0 | **Real room, keep** as `Kök` (owner) — no smart lights, stays empty |
+| `Korridor` | 0 | **Rename → `Badrum korridor`** (owner: it is the bathroom corridor) — seed `Korridor tak` + `Korridor 2` |
+| `Kvällsbelysning` | 2 (`P10`,`P11`) | **Dissolve** — P10→`Uterum`, P11→`Utebelysning` (outdoor, owner) |
 | `Other` | 0 | **EMPTY junk** — delete |
 | `OutsideRoom` | 1 (Uteljussensor) | Keep → rename `Uterum`; move Uteljussensor out (house-wide) |
 | `Sovrum` | 1 (Sovrum dimmer) | Keep — good |
@@ -56,11 +71,12 @@ is dead, these are scaffolding, not rooms).
 | `Vardagsrum` | 3 (P1, dimmer, bokhylla) | Keep — good |
 
 **Summary of consolidation actions:**
-1. `CarPort` + `Kitchen` + `Other` + `Träningsrum` → **delete** (empty legacy).
+1. `CarPort` + `Other` + `Träningsrum` → **delete** (empty legacy). `Kitchen` →
+   **keep** as `Kök` (no smart lights, real room).
 2. `Ute framsida` → **merge into** `Utebelysning`.
-3. `OutsideRoom` → rename `Uterum`; `Kvällsbelysning` → **dissolve** (devices to
-   real rooms); `Carport korridor` → rename **Kök korridor**.
-4. `Hall` → `Entré hall`; `Korridor` → `Badrum korridor` (owner confirm).
+3. `OutsideRoom` → rename `Uterum`; `Kvällsbelysning` → **dissolve** (P10→Uterum,
+   P11→Utebelysning); `Carport korridor` → rename **Kök korridor**.
+4. `Hall` → `Entré hall`; `Korridor` → `Badrum korridor`.
 5. `Uteljussensor` stays house-level (no room area).
 
 Verdict: the **area registry is the single biggest unrealized lever** here.
@@ -109,17 +125,17 @@ business in a group; it belongs in the area registry.**
 | Isacs rum tak | Isacs rum |
 | Isacs sänglampa (p6) | Isacs rum |
 | Hue-dimmer Isacs (RWL021) | Isacs rum |
-| Groventre (l3_1) | Groventré (new area) |
-| Carport ingång (l3_2) | Carport |
-| Bilvärmare (P4) | Carport (outside) |
-| Uttag P2 | Kök? (unknown — owner) |
+| Groventre (l3_1) | Entré hall (proposed; "groventré" night-corner) |
+| Carport ingång (l3_2) | Kök korridor (proposed; carport entry = kitchen corridor) |
+| Bilvärmare (P4) | Utebelysning (outdoor, carport plug) |
+| Uttag P2 | Kök (proposed — owner maybe) |
 | Isacs lekstuga (TRETAKT plug) | Lekstuga (new area) |
 | STYRBAR Isacs lekstuga (remote) | Lekstuga |
-| Hobbyrum fönster (innr) | Hobbyrum |
+| Hobbyrum fönster (innr) | Hobbyrum (new area) |
 | Slinga uterum (P10) | Uterum |
-| Julslinga (P11) | Uterum (or Kvällsbelysning → merge) |
-| Ute huvudentré | Ute framsida |
-| Uteljussensor | Ute framsida |
+| Julslinga (P11) | Utebelysning (outdoor, owner) |
+| Ute huvudentré | Utebelysning |
+| Uteljussensor | house-wide (no room area) |
 | (phones/persons) | — |
 
 ### Proposal (#031): labels for cross-cutting concerns
@@ -250,9 +266,15 @@ superseded/sharpen by #031).
 
 ## Owner decisions needed before any edit
 
-1. Room/floor reality: which devices are in which rooms (esp. "Hörnlampa/
-   Tvättstuga (P1)", "Uttag P2", "Bilvärmare (P4)", Carport vs Carport korridor).
-2. English legacy areas: rename to Swedish + delete empty `Other`/`Carport
-   korridor`? Add floors?
+Resolved 2026-10-23: Kitchen real room (keep as Kök, no smart lights),
+Korridor = bathroom corridor (→Badrum korridor), P11 Julslinga outdoor
+(→Utebelysning), Uteljussensor house-wide, Utebelysning = outdoor lighting
+front+back, Carport korridor = kitchen corridor, Kvällsbelysning not an area.
+
+Still open (small, for the device-map execution round):
+1. Device placements proposed but unconfirmed: `l3_1`→Entré hall, `l3_2`→Kök
+   korridor, `Bilvärmare (P4)`→Utebelysning, `Uttag P2`→Kök.
+2. New areas `Lekstuga` (isac_lekstuga + STYRBAR) and `Hobbyrum`
+   (hobbyrum fönster) — create, or map those devices to existing areas?
 3. Enable pause toggles (#032), `goodnight` script (#034)?
 4. Christmas sockets: switch from group to label (#035) — resolves #020?

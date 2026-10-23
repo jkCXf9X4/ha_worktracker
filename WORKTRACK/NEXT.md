@@ -87,13 +87,13 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
 - [ ] #030 **Normalize area registry + map all devices** — area review done
       (2026-10-23): 15 areas, 8/46 devices mapped; owner corrections applied.
       **Plan (`docs/deep_dive_organization.md`):** delete empty legacy `CarPort`,
-      `Kitchen`(?), `Other`, `Träningsrum`; `Carport korridor`→rename **Kök
-      korridor**; `Hall`→**Entré hall**; `Korridor`→**Badrum korridor**(?)
-      [owner confirm]; `Ute framsida`→**merge into** `Utebelysning` (outdoor,
-      front+back); `OutsideRoom`→`Uterum`; **dissolve** `Kvällsbelysning`
-      (P10→Uterum, P11→window room); `Uteljussensor` house-wide (no room).
-      Then assign ALL physical devices to rooms; dashboard Belysning → area
-      cards. Owner OK on the remaining room/floor questions before edits.
+      `Other`, `Träningsrum`; `Kitchen`→keep as **Kök**; `Carport korridor`→
+      **Kök korridor**; `Hall`→**Entré hall**; `Korridor`→**Badrum korridor**;
+      `Ute framsida`→merge into **Utebelysning** (outdoor, front+back);
+      `OutsideRoom`→**Uterum**; dissolve `Kvällsbelysning` (P10→Uterum,
+      P11→Utebelysning); `Uteljussensor` house-wide (no room). Then assign ALL
+      physical devices to rooms; dashboard Belysning → area cards. Owner OK on
+      remaining device-map proposals (l3_1/l3_2/P4/P2, new Lekstuga/Hobbyrum).
 - [ ] #031 **Labels for cross-cutting concerns** — `säsong` (p10/p11/p1/p6),
       `utebelysning`; target labels from automations instead of group edits.
       Sharpen/supersede #028. Needs #030.
