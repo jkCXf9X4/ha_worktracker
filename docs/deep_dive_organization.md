@@ -125,8 +125,8 @@ business in a group; it belongs in the area registry.**
 | Isacs rum tak | Isacs rum |
 | Isacs sänglampa (p6) | Isacs rum |
 | Hue-dimmer Isacs (RWL021) | Isacs rum |
-| Groventre (l3_1) | Entré hall (proposed; "groventré" night-corner) |
-| Carport ingång (l3_2) | Kök korridor (proposed; carport entry = kitchen corridor) |
+| Groventre (l3_1) | **Kök korridor** (fished, by the bedroom) |
+| Carport ingång (l3_2) | **Kök korridor** (fished, by the carport entrance) |
 | Bilvärmare (P4) | Utebelysning (outdoor, carport plug) |
 | Uttag P2 | Kök (proposed — owner maybe) |
 | Isacs lekstuga (TRETAKT plug) | Lekstuga (new area) |
@@ -134,7 +134,14 @@ business in a group; it belongs in the area registry.**
 | Hobbyrum fönster (innr) | Hobbyrum (new area) |
 | Slinga uterum (P10) | Uterum |
 | Julslinga (P11) | Utebelysning (outdoor, owner) |
-| Ute huvudentré | Utebelysning |
+| Ute huvudentré | **Utebelysning** (fished, outdoor main entrance) |
+| Korridor tak | **Badrum korridor** (fished, by the kitchen) |
+| Korridor 2 | **Badrum korridor** (fished, by the carport entrance) |
+| Gästrum tak | **Gästrum** (fished, ceiling) |
+| Vardagsrum dimmer | **Vardagsrum** (fished, ceiling) |
+| Sovrum dimmer | **Sovrum** (fished, ceiling) |
+| Bokhylla höger | **Vardagsrum** (fished, bookshelf) |
+| Entré hall tak | **Entré hall** (fished) |
 | Uteljussensor | house-wide (no room area) |
 | (phones/persons) | — |
 
