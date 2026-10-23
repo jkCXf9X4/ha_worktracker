@@ -15,9 +15,11 @@ GitHub repo via the **Git Exporter** add-on (files land under `config/`).
 ## Pointers
 
 - Plan: `docs/PLAN.md`
+- Current HA best practices + audit of this config: `docs/BEST_PRACTICES.md`
+- `home_status` machine deep-dive / improvement options: `docs/deep_dive_home_status.md`
 - Live tracker / next work: `WORKTRACK/NEXT.md`
-- Historical logs (frozen): `WORKTRACK/archive/` (board, backlog, changelog)
-- Completed/archived docs: `docs/archive/` (inventory snapshot, automation spec, cleanup report)
+- Historical logs (frozen): `WORKTRACK/archive/` (changelog, board, backlog)
+- Completed/archived docs: `docs/archive/` (inventory snapshot, automation spec, cleanup report, P9 plan)
 - ZHA device map (canonical IDs ↔ IEEE) + pairing recipes: `.opencode/skills/home-assistant/SKILL.md`; full migration workbook: `docs/archive/hue_zha_migration.md`
 - Floor plan / room map: `docs/house_map.png`
 - HA operational knowledge (agent skill): `.opencode/skills/home-assistant/SKILL.md`

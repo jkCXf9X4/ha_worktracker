@@ -440,3 +440,79 @@ Chronological log of changes and decisions. Newest at the bottom.
   (Earlier same-day run had the agent write a *single mapping* under the old
   prompt — now fixed.)
 - Exporter pushed `ca61c3b` (AGENT_HANDBOOK.md + AGENT_EXAMPLES.md).
+
+## 2026-10-23 — P9 (#022): config_tools__call_service — built, deployed, hardened
+
+- **Deployed v0.3.0, then hardened v0.3.1** — whitelisted service-action tool so
+  the chat agent can call e.g. `light.turn_on` with `flash: short|long` (blink
+  lamps) and real service params entity intents can't carry. Living plan →
+  archived: `docs/archive/call_service_tool_P9_PLAN.md`.
+- Component: `CallServiceTool` in `config_tools` (allowlist `light|switch`
+  turn_on/off/toggle in `const.py`, entity-registry + exposure-only gating in
+  `tools.py`, 8th tool in `llm.py`, manifest → 0.3.1 with
+  `integration_type: service`). `data` = typed probatio schema (parse-time
+  "did you mean" errors); atomic writes; `_LOGGER` every call.
+- **v0.3.1 hardening rationale:** admin gate dropped for `call_service`
+  (exposure-bound like HA's native assistant model); typed `data`; atomic
+  writes; honest manifest.
+- Native alternative added: `scripts.yaml::korridor_blink` (`fields:
+  flash|transition`) — exposed scripts surface as `script.*` tools
+  automatically → "blinka korridorlampan" works with zero component code.
+- **Verified live via conversation/process:** forced `light.turn_off`/`turn_on`
+  state flips with `response.data.success == []` (empty = tool path, not intent);
+  bogus field returned real HA validation error verbatim. Exporter push
+  `989e5a0` (v0.3.0) + v0.3.1. Found + fixed the VM's stale `find_device`
+  (`registry.entities.get_entries_for_device_id`).
+- Docs/skill/tracker/PLAN updated.
+
+## 2026-10-23 — P10 (#023): critical config review patch, deployed + verified
+
+- **Startup grace bug fixed** (`00_startup_grace.yaml`): the
+  `input_boolean.ha_started` gate could be skipped by a restored `on` →
+  now `initial: false` + explicit turn-off on start.
+- **Family schedule edits no longer reset at boot** — removed `initial:` from
+  all `input_datetime`/`input_number` schedule helpers.
+- **Sleep scene fixed** — YAML scenes don't render Jinja → templated
+  `scene.nattmode` replaced by `script.nattmode` (dynamic night-corner
+  brightness); two static scenes remain.
+- **Restart reconciliation** for outside-light flag + ceiling/night/lock
+  automations (full state conditions after `ha_started -> on`).
+- **Christmas helper syncs immediately** via new automation; no forced-on boot.
+- Simplifications: single `lock.lock` for both doors, script field
+  defaults/selectors, `time_date` removed, logger warning, `home_status`
+  availability, modern `trigger:`/`action:` + `trigger: device` blueprints.
+- **Registry cleanup:** 12 orphaned `unavailable` automation entities purged
+  (17 active, 0 unavailable).
+- Verified live (17/17 automations on); exporter `c55930a`, mirror == VM.
+  Open question recorded: `switch.p4_socket` in `night_lamps` vs `switch.p6`
+  in `christmas_sockets` — owner decision pending (#020/#023 follow-up).
+
+## 2026-10-23 — Best-practice review + improvement candidates (#024–#029)
+
+- Collected current HA best practices online (official docs: five tools,
+  splitting config, triggers, organizing, securing; community: Taras
+  data-driven consolidation) and audited `config/` against them →
+  `docs/BEST_PRACTICES.md` (reference + build audit).
+- Deep-dived the `home_status` state machine → `docs/deep_dive_home_status.md`.
+  **Finding:** native `schedule` helper is the *wrong* tool here (no runtime
+  `schedule.set`; blocks can't cross midnight; weekday/weekend axes don't map)
+  — the template + `input_datetime` design stands. Proposed simpler equivalent
+  (HH:MM:SS lexicographic compare), **not deployed**.
+- Logged as improvement candidates #024–#029 in `WORKTRACK/NEXT.md` (all ⬜
+  owner-decision before touch): home_status simplification, startup-grace gate
+  blueprint, ceiling-lights consolidation, verification pair, seasonal labels,
+  scenes/groups duplication. Schedule-helper migration marked **rejected**.
+
+## 2026-10-23 — #019 won't-do finalized + tracker cleanup
+
+- **#019 Ceiling morning fade — confirmed won't-do** (owner decision already
+  made 2026-10-22: "remove that one, it will never be relevant"). Kept only in
+  `archive/board.md`/`backlog.md` history; not reopened.
+- **Tracker cleaned up for further dev** — `WORKTRACK/NEXT.md` slimmed to a
+  lean forward-looking file (only #020 + improvement candidates #024–#029 open;
+  P0–P10 phase table; standing decisions; ops reminders). All delivered detail
+  moved to this changelog (P9/P10 backfilled above). `board.md`/`backlog.md`
+  marked **SUPERSEDED** (historical, read-only). Completed plan → archived:
+  `docs/archive/call_service_tool_P9_PLAN.md` (live refs updated in PLAN.md /
+  AGENT_TOOLS.md). Best-practice docs added: `docs/BEST_PRACTICES.md` +
+  `docs/deep_dive_home_status.md`.

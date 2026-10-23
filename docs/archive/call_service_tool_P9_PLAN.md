@@ -1,11 +1,17 @@
 # P9 — `config_tools__call_service`: whitelisted service-action tool for the chat agent
 
+> **ARCHIVED 2026-10-23 — fully delivered.** This living plan is complete and
+> now historical; the component is deployed + verified, so work no longer
+> depends on this file. Details up-to-date at: `docs/AGENT_TOOLS.md` §3.6
+> (design/mechanism), `.opencode/skills/home-assistant` (ops), and
+> `WORKTRACK/archive/changelog.md` (2026-10-23 P9 entry).
+
 Status: **DEPLOYED + VERIFIED 2026-10-23 (v0.3.0), hardened v0.3.1** —
 component + `AGENT_HANDBOOK.md` deployed to the VM via tar-over-SSH, core
 restarted, exercised live through the chat agent (real `light.turn_off`/
 `turn_on` state change via the tool + real HA validation error on a bogus
-`data` field relayed verbatim), exporter pushed (`989e5a0` verified; v0.3.1
-pending), committed. Implementation history in this file.
+`data` field relayed verbatim), exporter pushed (`989e5a0` v0.3.0 + v0.3.1,
+sha-verified). Implementation history in this file.
 
 > **v0.3.1 hardening (2026-10-23, applied here / deferred above)**
 > Critical review led to these adjustments (see §6):

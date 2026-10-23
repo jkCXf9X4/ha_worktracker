@@ -23,8 +23,9 @@ opaque free-form object), writes are atomic (tempfile + `os.replace`), and the
 component logs every call via `_LOGGER`. Native alternative added:
 `script.korridor_blink` surfaces to the agent as a `script.*` tool with `fields`
 (schema from `ActionTool`) — the HA-blessed path for a named blink action.
-Exporter push for v0.3.1: pending. §3.6 documents design/mechanism; rollout +
-findings in `docs/call_service_tool_P9_PLAN.md`.
+Exported via Git Exporter (`989e5a0` v0.3.0 + v0.3.1, mirror sha-verified).
+§3.6 documents design/mechanism; rollout + findings in
+`docs/archive/call_service_tool_P9_PLAN.md`.
 
 Design (mechanism + rationale) below; rollout executed per §5.
 
@@ -191,9 +192,9 @@ helpers; no shell, no new deps).
 ```
 manifest.json      # domain, version, "platforms": ["llm"]
 __init__.py        # async_setup() -> True; CONFIG_SCHEMA = cv.empty_config_schema
-const.py           # DOMAIN = "config_tools"
-llm.py             # async_get_tools -> LLMTools(tools=[...5 tools])
-tools.py           # path canonicalization, allowlist/denylist, in-memory revert
+const.py           # DOMAIN = "config_tools"; ALLOWED_SERVICE_ACTIONS (P9)
+llm.py             # async_get_tools -> LLMTools(tools=[...8 tools])
+tools.py           # path canonicalization, allowlist/denylist, in-memory revert, CallServiceTool
 ```
 - Implementation notes: pure stdlib (`pathlib`); all returns are `ToolResult`
   dicts (`data={"result"|"error": ...}`); write flow snapshots to memory (no

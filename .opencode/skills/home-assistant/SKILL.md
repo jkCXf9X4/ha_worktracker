@@ -314,9 +314,10 @@ recreate as HA groups if ever needed.
   — plus (v0.2.0) **`find_device`** (device-registry lookup by name →
   `device_id`) and **`device_triggers`** (live `device_automation` trigger
   type/subtype enum), plus (v0.3.0) **`call_service`** (see below).
-  `write_file`/`check_config`/`reload`/`call_service` require an **admin**
+  `write_file`/`check_config`/`reload` require an **admin**
   caller (checked via `llm_context.context.user_id` →
-  `hass.auth.async_get_user().is_admin`).
+  `hass.auth.async_get_user().is_admin`); `call_service` is **exposure-bound
+  only** (no admin gate — matches HA's native assistant-access model).
 - Security: pure `pathlib`; path canonicalized under `config_dir`; write only
   `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml`; never
   `configuration.yaml`/`secrets.yaml`/`.storage`/DBs/logs/config_tools itself.
@@ -395,7 +396,8 @@ recreate as HA groups if ever needed.
   `registry.get_entries_for_device_id` (EntityRegistry) → AttributeError —
   repo version uses `registry.entities.get_entries_for_device_id` (HA 2026.10);
   ensure pushed files md5-match (mirror == VM == repo). Exporter push `989e5a0`.
-- Plan + findings: `docs/call_service_tool_P9_PLAN.md`.
+- Plan + findings (archived): `docs/archive/call_service_tool_P9_PLAN.md`; live
+  reference + security model: `docs/AGENT_TOOLS.md` §3.6.
 
 ## Gotchas / lessons learned
 

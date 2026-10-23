@@ -1,5 +1,10 @@
 # Status board
 
+> **SUPERSEDED 2026-10-22 — historical snapshot, read-only.** The live tracker
+> is `WORKTRACK/NEXT.md`; the full delivery record is `archive/changelog.md`.
+> Phase rows below marked "open" here were all completed by 2026-10-23 (P5–P10).
+> Kept as-is for history; do not edit.
+
 Snapshot owner: build agent. Update after every working session.
 
 Last updated: 2026-10-22

@@ -1,19 +1,19 @@
 # Work Tracker — Home Assistant build
 
 The repo's tracker for this **Home Assistant instance** (HAOS VM on Proxmox,
-`192.168.1.248`). The build ran phases P0–P4 (all done 2026-10-21) and the system
-is in normal operation. Docs about *how/what* live in `docs/`; ops how-to in the
-skill (`.opencode/skills/home-assistant`). This tracker answers *where we are*
-and *what's next*.
+`192.168.1.248`). The build ran phases P0–P10 (all done 2026-10-23) and the
+system is in normal operation. Docs about *how/what* live in `docs/`; ops how-to
+in the skill (`.opencode/skills/home-assistant`). This tracker answers *where we
+are* and *what's next*.
 
 ## Files
 
 | Path | Purpose |
 |------|---------|
-| `WORKTRACK/NEXT.md` | Living, forward-looking tracker: open work (#015–#020), phase state, standing decisions |
-| `WORKTRACK/archive/board.md` | Historical status board (frozen 2026-10-22) |
-| `WORKTRACK/archive/backlog.md` | Historical issue log (frozen 2026-10-22; open items moved to NEXT.md) |
-| `WORKTRACK/archive/changelog.md` | Chronological log of changes/decisions — **still appended to** |
+| `WORKTRACK/NEXT.md` | **Living** tracker: open work (#020), improvement candidates (#024–#029), phase state, standing decisions |
+| `WORKTRACK/archive/changelog.md` | Chronological log of changes/decisions — **still appended to**; the record of everything delivered |
+| `WORKTRACK/archive/board.md` | Historical status board (superseded by NEXT.md + changelog) |
+| `WORKTRACK/archive/backlog.md` | Historical issue log (superseded by NEXT.md + changelog) |
 
 ## How items flow
 
