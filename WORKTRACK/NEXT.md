@@ -79,6 +79,36 @@ Nothing deployed — each waits on ⬜ owner decision before edit.
       map. Documented so it isn't re-proposed: `docs/deep_dive_home_status.md`
       §Option A.
 
+### Organization round (room grouping, helpers, templates, scripts, automations) — 2026-10-23
+
+Live registry research (areas + device map pulled read-only over SSH) + full
+best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision.
+
+- [ ] #030 **Normalize area registry + map all devices** — area review done
+      (2026-10-23): 15 areas, 8/46 devices mapped; owner corrections applied.
+      **Plan (`docs/deep_dive_organization.md`):** delete empty legacy `CarPort`,
+      `Kitchen`(?), `Other`, `Träningsrum`; `Carport korridor`→rename **Kök
+      korridor**; `Hall`→**Entré hall**; `Korridor`→**Badrum korridor**(?)
+      [owner confirm]; `Ute framsida`→**merge into** `Utebelysning` (outdoor,
+      front+back); `OutsideRoom`→`Uterum`; **dissolve** `Kvällsbelysning`
+      (P10→Uterum, P11→window room); `Uteljussensor` house-wide (no room).
+      Then assign ALL physical devices to rooms; dashboard Belysning → area
+      cards. Owner OK on the remaining room/floor questions before edits.
+- [ ] #031 **Labels for cross-cutting concerns** — `säsong` (p10/p11/p1/p6),
+      `utebelysning`; target labels from automations instead of group edits.
+      Sharpen/supersede #028. Needs #030.
+- [ ] #032 **Pause-toggle helpers** — `input_boolean.automatik_taklampor` /
+      `automatik_nattlampor` / `automatik_uteljus` gate their automations so the
+      family can pause a behavior from the dashboard without editing YAML.
+- [ ] #033 **`next_wake`/`next_bedtime` template sensor** — derived next
+      wake/sleep boundary for the dashboard (defer until #024 lands).
+- [ ] #034 **`script.goodnight`** — one voice/dashboard action: ceiling off,
+      night-corner dim (`script.nattmode`), doors locked. Manual convenience on
+      top of the automatic sleep behavior.
+- [ ] #035 **Christmas sockets via label + scenes/groups de-dup** — target
+      label `säsong` instead of `christmas_sockets` group (resolves #020);
+      scenes.yaml membership follows area ownership. Needs #030/#031.
+
 ## Standing decisions & conventions (binding for future work)
 
 - **Source of truth = HA `/config` on the VM.** Git Exporter mirrors it to

@@ -17,6 +17,7 @@ GitHub repo via the **Git Exporter** add-on (files land under `config/`).
 - Plan: `docs/PLAN.md`
 - Current HA best practices + audit of this config: `docs/BEST_PRACTICES.md`
 - `home_status` machine deep-dive / improvement options: `docs/deep_dive_home_status.md`
+- Organization deep-dive (rooms/areas/floors/labels, helpers, templates, scripts, automations): `docs/deep_dive_organization.md`
 - Live tracker / next work: `WORKTRACK/NEXT.md`
 - Historical logs (frozen): `WORKTRACK/archive/` (changelog, board, backlog)
 - Completed/archived docs: `docs/archive/` (inventory snapshot, automation spec, cleanup report, P9 plan)
