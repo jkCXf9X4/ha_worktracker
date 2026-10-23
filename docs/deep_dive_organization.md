@@ -129,10 +129,10 @@ business in a group; it belongs in the area registry.**
 | Carport ingång (l3_2) | **Kök korridor** (fished, by the carport entrance) |
 | Bilvärmare (P4) | Utebelysning (outdoor, carport plug) |
 | Uttag P2 | Kök (proposed — owner maybe) |
-| Isacs lekstuga (TRETAKT plug) | Lekstuga (new area) |
-| STYRBAR Isacs lekstuga (remote) | Lekstuga |
-| Hobbyrum fönster (innr) | Hobbyrum (new area) |
-| Slinga uterum (P10) | Uterum |
+| Isacs lekstuga (TRETAKT plug) | **Vardagsrum** (fished, Isacs playhouse — owner: lekstuga is part of living room) |
+| STYRBAR Isacs lekstuga (remote) | **Vardagsrum** (with the playhouse) |
+| Hobbyrum fönster (innr) | **Hobbyrum** (fished, window lamp) |
+| Slinga uterum (P10) | **Uterum** (fished, outdoor pergola light) |
 | Julslinga (P11) | Utebelysning (outdoor, owner) |
 | Ute huvudentré | **Utebelysning** (fished, outdoor main entrance) |
 | Korridor tak | **Badrum korridor** (fished, by the kitchen) |

@@ -14,6 +14,16 @@
 | light.dimmer_fixed_bedroom_light_2 | Sovrum väggdimmer | Sovrum, ceiling | Sovrum |
 | light.bokhylla_h_light | Bokhylla höger | Vardagsrum, bookshelf | Vardagsrum |
 | light.ute_huvudentre | Ute huvudentré | Outdoor, main entrance | Utebelysning |
+| switch.laslampa_on_off | Gästrum fönster | Gästrum, window lamp | Gästrum |
+| switch.hobby_rum_fonster | Hobbyrum fönster | Hobbyrum, window lamp | Hobbyrum |
+| switch.isac_lekstuga | Isacs lekstuga | Vardagsrum, Isacs playhouse | Vardagsrum |
+| switch.p10_socket | Slinga uterum | Uterum, outdoor pergola light | Uterum |
 
 > Skip Isac's room lights entirely (Isac asleep) — `light.isac_tak`, Isacs
 > sänglampa (p6). Do not flash those.
+
+> Tuya plugs `p1`/`p2`/`p4`/`p11` were `unavailable` during the session (Tuya
+> cloud offline) — not strobed. Owner placements from earlier context:
+> `p4` Bilvärmare → Utebelysning, `p11` Julslinga → Utebelysning (outdoor),
+> `p2` → Kök (proposed), `p1` Hörnlampa → Vardagsrum (already in registry).
+> Re-strobe when Tuya is back online if needed.
