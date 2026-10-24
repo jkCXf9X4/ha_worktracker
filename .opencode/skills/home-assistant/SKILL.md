@@ -176,6 +176,9 @@ automations + schedule helpers. Migration design + P4 requirements: see
   (added 2026-10-23 — a state-based template never re-ran on the clock, so the
   awake/sleep transitions were stuck until someone arrived/left). Derived
   attributes on it (2026-10-24): `is_workday`, `next_wake`, `next_bedtime`.
+  State/attribute logic uses **lexicographic compare of zero-padded `HH:MM:SS`
+  strings** (clock order == string order), not timestamp math (#024, verified
+  equivalent offline).
 - Locks on sleep/away (`automations/locks.yaml`); outside-light lux hysteresis
   (400 on / 150 off, **read live from the input_number helpers**
   `outside_light_on/off_threshold` via `above:`/`below:` entity refs)
@@ -200,20 +203,29 @@ automations + schedule helpers. Migration design + P4 requirements: see
   ZHA lux sensor was up (a `numeric_state` on `unknown` no-ops), leaving the
   restored `light_outside` stale for hours (numeric_state alone still only fires
   on a threshold crossing).
-- **9 automation entities + 8 scripts, 0 unavailable** (2026-10-24): twin
+- **9 automation entities + 12 scripts, 0 unavailable** (2026-10-24): twin
   on/off pairs collapsed 6→3 (`night_lights`, `locks`, `outside_light`); the
   4 orphaned ceiling registry entries + 6 more orphans (old lock/night/outside
   pairs + leftover `set_*` scripts) were purged via WebSocket
-  `config/entity_registry/remove`.
+  `config/entity_registry/remove`; the gate round added `lock_by_status`
+  (`script.las_vid_hemmastatus_gate`). Reloaded/verified: all 9 automations
+  `on`, all 12 scripts loaded.
 - **Scenes removed 2026-10-23** — `scenes.yaml` deleted: the 2 static scenes
   duplicated the taklampa/utelampa labels 1:1 and scenes can't target labels.
   Replaced by label-driven scripts (`script.taklampa_pa` = taklampa on,
   `script.uteljus_pa` = utelampa on). Scenes cannot render Jinja — keep dynamic
   presets in scripts (`script.nattmode`).
 - **Automations are thin "when" wrappers** (2026-10-23 → finished 2026-10-24):
-  the actual light/lock behavior lives in **scripts** (behavior boxes) so
-  automations are just trigger→condition→`script.X`. **All** decision logic
-  (`choose`) now lives in scripts — none left in automations:
+  the actual light/lock behavior lives in **scripts** (behavior boxes). As of
+  2026-10-24 automations are **trigger→`script.X` only** — the pause/ha_ready
+  gates were folded INTO the behavior-box scripts as a leading `if:`/`then:`
+  wrapper (see the gotcha below — scripts have *no* top-level `condition` key).
+  `ceiling_lights_sync`/`uteljus_sync` gate on their `automatik_*` toggle +
+  `ha_ready`; `outside_light_sync` on `ha_ready`; `lock_by_status` (new wrapper)
+  gates `automatik_las` + `ha_ready` + `home_status sleep/away` and calls the
+  ungated `lock_doors` (so `goodnight` always locks). The `ha_ready -> on`
+  trigger stays in every automation file for boot-reconcile.
+  Decision logic (`choose`) lives in scripts — none left in automations:
   - `script.ceiling_lights_sync` — the 4-branch ceiling role (sleep→`nattmode`;
     away→`label slack_borta` off; awake+dark→`taklampa` on; awake+bright→off).
   - `script.uteljus_sync` — resolves `utelampa` from `light_outside` (via
@@ -224,7 +236,10 @@ automations + schedule helpers. Migration design + P4 requirements: see
   - `script.uteljus_pa/av` — front outdoor (`label.utelampa`) + seasonal
     (`label.sasong`); named actions also used by `uteljus_sync`.
   - `script.taklampa_pa` — ceiling lamps (`label.taklampa`) on.
-  - `script.lock_doors` — locks back+main; used by locks.yaml + `goodnight`.
+  - `script.lock_doors` — locks back+main; UNGATED (used by goodnight).
+  - `script.lock_by_status` — gated wrapper (automatik_las + ha_ready +
+    home_status sleep/away) → `lock_doors`; the locks automation calls THIS.
+    Its script entity slug is `script.las_vid_hemmastatus_gate`.
   - `script.goodnight` — composes `nattmode` + `lock_doors` (voice "god natt").
   - `script.nattmode` — ceiling off (`taklampa`) + night-corner dim (`natthorn`).
   - `script.light_on_with_transition` — fade a light, an area, **or a label**
@@ -248,25 +263,38 @@ automations + schedule helpers. Migration design + P4 requirements: see
   replaces `sovrum.yaml` + `isac_room.yaml`. Instances in
   `automations/room_schedules.yaml`: `p4_sovrum_schedule` (Mon–Fri + off) and
   `p4_isac_schedule` (daily, fade-in only). Inputs: area + on/off `input_datetime`
-  entities + `input_number` brightness + weekday list (empty=all). Fade
-  transition shared via `input_number.fade_transition_seconds` (default 1200).
-  Weekday check uses locale-proof `now().isoweekday() in weekdays` (select
-  values are numeric strings "1".."7", Monday=1); the `fade_out` trigger is a
-  template `at` (`{{ [states(off_entity)] if off_enabled else [] }}`) so a
-  disabled off-time renders an empty list and never fires.
-- **Blueprint select `value:` must be a STRING** (2026-10-24): bare ints like
-  `value: 1` fail blueprint validation with
-  `expected str at ...options[0].value'. Got None` → the instances go
-  `unavailable` (only visible as `automation` setup errors in `ha core logs`).
-  Use quoted `value: "1"` and `| map('int') | list` in comparisons.
-- **Pause toggles** (2026-10-23): `input_boolean.automatik_taklampor` /
-  `automatik_nattlampor` / `automatik_las` gate the ceiling, night and lock
-  automations — family can pause a behavior from the dashboard (Automatik card,
-  Belysning view). **This is the ONLY pause mechanism.** (A timer-based
-  "pause for 1 h" + resume automation was built and then *removed* same day 2026-10-24 —
-  redundant with the toggles and caused a boot-ordering bug; do not re-introduce.)
-  **Gotcha**: the `automation.trigger` service bypasses conditions — verify gates
-  with a real state change or `test_condition` WS API.
+  entities + `input_number` brightness + weekday list (empty=all) +
+  optional `pause_entity` (an `input_boolean`; when OFF the whole schedule is
+  inert — empty = no pause). Fade transition shared via
+  `input_number.fade_transition_seconds` (default 1200). Weekday check uses
+  locale-proof `now().isoweekday() in weekdays` (select values are QUOTED
+  numeric strings "1".."7", Monday=1). Both `on_entity` and `off_entity` are
+  plain `at: !input X` time triggers; `off_enabled`/weekdays/pause gate the
+  fade_out **action branch** (a no-op daily fire when off_enabled=false is
+  harmless). **GOTCHA:** trigger `at:` limited templates get NO blueprint
+  variables — a template `at` referencing `variables:` fails with
+  `'x' is undefined` and the automation's triggers fail to set up. Keep `at:`
+  values to `!input` substitutions only.
+- **Blueprint select `value:` gotcha (2026-10-24):** the ORIGINAL flow-style
+  selector options `- { label: X, value: "1" }` failed blueprint validation
+  (`expected str at ...options[0].value'. Got None` → instances silently
+  `unavailable`, only visible as setup errors in `ha core logs`). Block-form
+  `- label: X\n  value: "1"` parses reliably — use that. (Note: the skill's
+  older "quoted ints" wording is superseded by block-form.)
+- **Pause toggles** (2026-10-23, extended 2026-10-24):
+  `input_boolean.automatik_taklampor` / `automatik_nattlampor` / `automatik_las`
+  + `automatik_sovrum` / `automatik_isac` (per room-schedule) gate the
+  behaviors — family can pause from the dashboard (Automatik card, Belysning
+  view). **This is the ONLY pause mechanism.** (A timer-based "pause for 1 h" +
+  resume automation was built and then *removed* same day 2026-10-24 — redundant
+  with the toggles and caused a boot-ordering bug; do not re-introduce.)
+  All toggles use `initial: true` (deliberate: every restart re-enables the
+  behaviors — unlike the schedule/seasonal helpers which restore). Gates live
+  as `if:`/`then:` wrappers at the top of the dispatcher scripts, NOT in the
+  automation files. **Gotchas:** `automation.trigger` bypasses conditions; and
+  YAML `script:` objects have NO top-level `condition` key (HA rejects it:
+  `not a valid option at 'condition'` and disables the script) — use a leading
+  `- if:` `/` `then:` sequence item, or a `choose` with `default: []`.
 - Dashboard views (2026-10-23): overview, belysning (Automatik card + 9 area
   cards), utomhus (2 areas + Säsongsbelysning = p10/p1), historik, schema.
   Energi view removed (had only the dead `sensor.p4_power`).
@@ -440,7 +468,7 @@ recreate as HA groups if ever needed.
 - `.cache/brands/` icon churn shows up in exporter commits around integration
   loads (model catalogs, brand icons) — benign transient noise.
 
-## config_tools component (P8 — 2026-10-22, built, not yet deployed)
+## config_tools component (P8 — 2026-10-22, deployed + extended to v0.4.0)
 
 - Adds tools to the **same `assist` API** the OpenRouter agent uses, via a
   custom-component **`llm` platform**: `custom_components/config_tools/` with
@@ -454,15 +482,21 @@ recreate as HA groups if ever needed.
   `write_file`, `check_config`, `reload` (`automation|script|group|template`)
   — plus (v0.2.0) **`find_device`** (device-registry lookup by name →
   `device_id`) and **`device_triggers`** (live `device_automation` trigger
-  type/subtype enum), plus (v0.3.0) **`call_service`** (see below).
-  `write_file`/`check_config`/`reload` require an **admin**
-  caller (checked via `llm_context.context.user_id` →
+  type/subtype enum), (v0.3.0) **`call_service`** (see below), and (v0.4.0)
+  **`set_label`** (reassign an entity's role labels in the entity registry;
+  label-registry validated, applies instantly, no reload) + **`restart_core`**
+  (admin; schedules `homeassistant.restart` — the only way new `input_*`
+  helpers or component code take effect).
+  `write_file`/`check_config`/`reload`/`set_label`/`restart_core` require an
+  **admin** caller (checked via `llm_context.context.user_id` →
   `hass.auth.async_get_user().is_admin`); `call_service` is **exposure-bound
   only** (no admin gate — matches HA's native assistant-access model).
 - Security: pure `pathlib`; path canonicalized under `config_dir`; write only
-  `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml`; never
+  `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml`,
+  **and `input_boolean|input_number|input_datetime/*.yaml`** (v0.4.0); never
   `configuration.yaml`/`secrets.yaml`/`.storage`/DBs/logs/config_tools itself.
-  write→`async_check_ha_config_file`→reload, reverting in memory on check
+  write→`async_check_ha_config_file`→reload (input_* have NO reload service —
+  the tool returns "call restart_core"), reverting in memory on check
   failure. **No shell** (shell_command/command_line/py_script all live in
   `configuration.yaml`, never writable).
 - Load: needs `config_tools:` (empty) in `configuration.yaml` + **core restart**
@@ -537,6 +571,21 @@ recreate as HA groups if ever needed.
   `registry.get_entries_for_device_id` (EntityRegistry) → AttributeError —
   repo version uses `registry.entities.get_entries_for_device_id` (HA 2026.10);
   ensure pushed files md5-match (mirror == VM == repo). Exporter push `989e5a0`.
+- **HA 2026.10 entity-registry API (v0.4.0 finding):** updates go through
+  `EntityRegistry.async_update_entity(entity_id, **changes)` — a **sync**
+  method that RETURNS the entry (do NOT `await` it; both `registry.async_update`
+  and `registry.entities.async_update` are gone). Entity existence check is
+  `registry.async_get(entity_id)`. Labels set via `labels=[...]` (replaces the
+  whole set; validated against `label_registry.async_get(hass).labels`, which is
+  already loaded — `async_load` asserts if present).
+- **Component-code + `input_*` changes need a CORE RESTART** (config_tools
+  module cache / no reload service). The agent's `config_tools__restart_core`
+  is the sanctioned path (admin). `config_tools__set_label` applies instantly —
+  no reload or restart.
+- **GOTCHA (2026-10-24):** the Git Exporter versions EVERYTHING under
+  `/config`, including stray backups — keep rollback tars OUTSIDE `/config`
+  (e.g. `/root/...tar`). A `/config/.opencode_backup_*/files.tar` was
+  committed and had to be pruned in a follow-up push.
 - Plan + findings (archived): `docs/archive/call_service_tool_P9_PLAN.md`; live
   reference + security model: `docs/AGENT_TOOLS.md` §3.6.
 
@@ -606,7 +655,9 @@ recreate as HA groups if ever needed.
 - **Adding helpers via YAML needs a core restart**: `input_boolean`/
   `input_number`/`input_datetime` added in YAML have **no reload service** —
   `ha core restart` is required for new helper entities to appear (2026-10-23:
-  `automatik_las` only loaded after restart).
+  `automatik_las` only loaded after restart). The chat agent can do the whole
+  loop itself with `config_tools__write_file` (input_* is now writable) +
+  `config_tools__restart_core`.
 
 ## How to grow this skill
 

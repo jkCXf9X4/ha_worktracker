@@ -72,6 +72,28 @@ candidates (#024–#029, all waiting on owner decision). Full history:
         `automatik_nattlampor`=off, bedroom light untouched. Exporter `7d1edf0`.
       Full log: `WORKTRACK/archive/changelog.md`.
 
+- [x] **Gates-in-scripts + room pauses + home_status simplification + agent
+      tools (2026-10-24, owner request)** — Exporter `cd8c26a` (+`f0d9ffe`):
+      - **Gates folded into behavior-box scripts** (`if:`/`then:` wrapper at the
+        top of `ceiling_lights_sync`, `uteljus_sync`, `outside_light_sync`,
+        `lock_by_status`) — automations are now trigger→script only. **GOTCHA:
+        YAML `script:` objects have NO top-level `condition` key** (HA disables
+        the script); use `- if:`/`then:`. `lock_doors`/`nattmode` stay ungated
+        so `goodnight` always locks.
+      - **Room-schedule pause toggles:** `input_boolean.automatik_sovrum` /
+        `automatik_isac` + blueprint `pause_entity` input.
+      - **#024 DONE:** `home_status` state uses lexicographic `HH:MM:SS`
+        compare (proof: 0 mismatches offline). **#033 DONE:** `next_wake`/
+        `next_bedtime` attributes added.
+      - **config_tools v0.4.0:** write allowlist += `input_*/*.yaml` (no reload —
+        returns "needs restart_core"); new `set_label` tool (registry
+        `async_update_entity`, verified live via the chat agent) + `restart_core`.
+      - **Latent blueprint bug fixed:** room_schedule `fade_out` trigger's
+        variable template (`off_enabled` undefined in limited `at:` templates)
+        + flow-style `{label,value}` selector options failed validation; both
+        rewritten (plain `at: !input off_entity` + block-form options).
+      Full log: `WORKTRACK/archive/changelog.md`.
+
 Nothing else is in flight.
 
 ## Improvement candidates
@@ -81,11 +103,12 @@ Best-practice review, 2026-10-23 — sourced from online HA best practices
 `docs/BEST_PRACTICES.md`; `home_status` machine: `docs/deep_dive_home_status.md`.
 Nothing deployed — each waits on ⬜ owner decision before edit.
 
-- [ ] #024 **`home_status` template simplification (option B)** — replace the
-      `as_timestamp`/date-concat math in `template/home_status.yaml` with a
-      zero-padded `HH:MM:SS` lexicographic compare (equivalent output, ~70%
-      shorter). Candidate patch verified-equivalent; needs `ha core check` +
-      live edge-trigger trace after apply. Owner sign-off: `docs/deep_dive_home_status.md`.
+- [x] #024 **`home_status` template simplification (option B)** — **DONE
+      2026-10-24**: `template/home_status.yaml` now compares zero-padded
+      `HH:MM:SS` strings lexicographically instead of `as_timestamp`/date-concat
+      math; equivalence verified offline (0 mismatches, all weekdays × minutes).
+      Live: sensor renders `awake` with `is_workday`/`next_wake`/`next_bedtime`.
+      (#033 landed in the same edit, see below.)
 - [x] #025 **Startup-grace gate repetition** — 12 automations share the
       `ha_started` + checklist gate; **superseded by the #026 consolidation**
       (2026-10-23): the ceiling/night automations got the gate folded into a
@@ -138,8 +161,9 @@ best-practice analysis: `docs/deep_dive_organization.md`. All ⬜ owner-decision
       daylight flag (`light_outside`) is the sensor, not a behavior worth pausing.
       **Ext 2026-10-23**: + `automatik_las` gate for the merged lock automation;
       Automatik card shows all 3 toggles.
-- [ ] #033 **`next_wake`/`next_bedtime` template sensor** — derived next
-      wake/sleep boundary for the dashboard (defer until #024 lands).
+- [x] #033 **`next_wake`/`next_bedtime` template sensor** — **DONE 2026-10-24**:
+      shipped as `home_status` attributes in the #024 rewrite (they were the
+      only consumers; no separate sensor entity needed).
 - [x] #034 **`script.goodnight`** — **DONE 2026-10-23**: composes `script.nattmode`
       + `script.lock_doors`; verified live (ceiling off, night corner dim, doors
       locked). Voice/dashboard "god natt" one-shot.

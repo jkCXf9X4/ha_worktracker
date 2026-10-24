@@ -610,3 +610,63 @@ commit `7d1edf0`.
   `restart`; isoweekday render = 6/False for saturday; bedroom lamp untouched;
   `automatik_nattlampor` left off. Exporter `7d1edf0` (5 files). Modest default
   `today is Saturday` → sovrum fade correctly inert.
+
+## 2026-10-24 — Scripts/templates/helpers/agent-tools expansion round
+
+Owner request: push further on scripts/templates/helpers simplification + make
+it easy for the local agent to change things. Applied on the VM, VERIFIED
+live, exporter commits `cd8c26a` (config round) + `f0d9ffe` (backup purge).
+
+- **#1 Gates folded into behavior-box scripts.** The repeated `condition` blocks
+  (`ha_ready` + a `automatik_*` pause toggle) were removed from 4 automation
+  files — they now live at the *top of the scripts* as an `if:`/`then:` wrapper
+  (NOT a script `condition:` — **YAML `script:` objects have NO top-level
+  `condition` key**; HA rejected `not a valid option at 'condition'` and
+  disabled the scripts; the sequence had to be wrapped in `- if:`/`then:`).
+  `ceiling_lights_sync`, `uteljus_sync` (gates: pause + ha_ready) and
+  `outside_light_sync` (ha_ready) self-gate; a new `script.lock_by_status`
+  peers the status `sleep/away` + `automatik_las` + `ha_ready` gates while
+  `script.lock_doors` stays ungated (so `goodnight` always locks). Automations
+  are now trigger→script only (ceiling/night/christmas/locks). `ha_ready`
+  trigger retained in each file for boot-reconcile.
+- **#2 Room-schedule pause toggles.** `input_boolean.automatik_sovrum` /
+  `automatik_isac` added (all pause toggles keep `initial: true` — deliberate:
+  restart re-enables every behavior; comment updated to say so). `room_schedule`
+  blueprint gained a `pause_entity` input (empty = always run); both instances
+  wired.
+- **#3 `home_status` simplification (#024) + `next_wake`/`next_bedtime` (#033).**
+  State now compares zero-padded `HH:MM:SS` strings lexicographically instead
+  of `as_timestamp`/date-concat math; attributes `is_workday`, `next_wake`,
+  `next_bedtime` render via `as_datetime`+`timestamp_custom`. Equivalence of the
+  state logic proven offline (0 mismatches across all 7 weekdays × 1440 min).
+- **#4 config_tools widened + new tools (v0.4.0).** Write allowlist extended to
+  `input_boolean|input_number|input_datetime/*.yaml` (these have NO reload
+  service — `write_file` returns "needs restart_core"); new `set_label` tool
+  (admin; entity-registry `labels` replace, label-registry validated, changed
+  live via `registry.async_update_entity`); new `restart_core` tool (admin;
+  schedules `homeassistant.restart`).
+- **FOUND AND FIXED while verifying:** the room_schedule blueprint's `fade_out`
+  trigger `at: {{ [states(off_entity)] if off_enabled else [] }}` was BROKEN in
+  the current HA (limited templates get no blueprint variables →
+  `off_enabled is undefined` → automation failed trigger setup; also the
+  `weekdays` flow-style selector `{label,value}` failed blueprint validation
+  with `value Got None`). Rewrote both: weekday options are block-form
+  `label:`/`value: "1"` and `fade_out` is a plain `at: !input off_entity` (the
+  choose branch gates on `off_enabled` + weekdays + pause). This was a latent
+  bug from the 07:44 round — the automations were "on" but their triggers failed
+  to set up.
+- **HA 2026.10 registry API:** entity-registry updates are
+  `EntityRegistry.async_update_entity(entity_id, **changes)` (SYNC, returns the
+  entry) — `async_update` and `registry.entities.async_update` do not exist.
+  `label_registry.async_get(hass)` returns the already-loaded registry;
+  `async_load` asserts when it is already present.
+- Verified live after 4 restarts: all 9 automations `on`, 12 scripts loaded,
+  `automatik_sovrum/isac` on, `home_status` awake with new attributes,
+  `light.entre_hall_tak` labels intact; `set_label` exercised end-to-end by the
+  chat agent via `conversation/process` (returned `["slack_borta","taklampa"]`).
+  `restart_core` deliberately not fired (destructive); the input_* write path
+  shares the verified write/reload flow. Pre-change backup:
+  `/root/ha_config_backup_20261024.tar` on the VM.
+- **GOTCHA:** a backup tar left under `/config/.opencode_backup_20261024/` got
+  picked up and committed by the exporter — backups must live OUTSIDE `/config`
+  (e.g. `/root`). Purged in `f0d9ffe`.
