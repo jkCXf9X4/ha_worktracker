@@ -34,6 +34,9 @@ candidates (#024–#029, all waiting on owner decision). Full history:
       P4 plug broke, P11 physically replaced it and now does the old P4 job as
       the front outdoor light. `night_lamps` = ute_huvudentre + **p11**;
       `christmas_sockets` = p10/p1/p6. Applied + reloaded live.
+      **Follow-up 2026-10-23:** p6 (Isacs sänglampa) **removed from `sasong`** —
+      it was wrongly following the dusk→dawn seasonal rule whenever
+      `christmas_lights` was on. Now a manual lamp. `sasong` = p10/p1.
 
 Nothing else is in flight.
 

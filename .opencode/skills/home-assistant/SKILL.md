@@ -106,6 +106,10 @@ config at `/config/docs/`.
   that changes live behaviour — confirm with the owner before changing.
   **RESOLVED 2026-10-23:** P4 plug broke and was physically replaced by P11.
   `switch.p4_socket` no longer exists. Labels now own these roles (see below).
+  **RESOLVED 2026-10-23 (late):** `switch.p6` removed from `label.sasong` — it is
+  a bedside lamp, not a seasonal socket, and was turning on every night while
+  `christmas_lights` was on (dusk→dawn via `script.uteljus_pa`). p6 is now a
+  purely manual lamp. `sasong` = p10_socket + p1_socket only.
 - **ZHA migration of the dead Hue bridge COMPLETE (2026-10-21).** All lights and
   plugs are on ZHA (ConBee II) with canonical entity IDs; canonical ID ↔ IEEE
   table in the ZHA section below. Full workbook:
@@ -139,7 +143,8 @@ Areas (11) own "where"; **labels** own "role". Groups deleted except `family`.
   - `taklampa` — entre_hall_tak, korridor_tak, color_temperature_light_1,
     laslampa_on_off, bokhylla_h_light (ceiling lamps; was `group.ceiling_lamps`)
   - `natthorn` — l3_1, l3_2 (night-corner; was hard-coded in script.nattmode)
-  - `sasong` — p10_socket, p1_socket, p6 (seasonal sockets; was `christmas_sockets`)
+  - `sasong` — p10_socket, p1_socket (seasonal sockets; was `christmas_sockets`;
+    **p6 removed 2026-10-23 — bedside lamp, not seasonal**)
   - `utelampa` — ute_huvudentre, p11_socket (front outdoor, follows daylight;
     was `group.night_lamps`)
 - **CRITICAL label-targeting gotcha (verified 2026-10-23):** `entity_id: label.X`
@@ -218,7 +223,7 @@ automations + schedule helpers. Migration design + P4 requirements: see
   Belysning view). **Gotcha**: the `automation.trigger` service bypasses
   conditions — verify gates with a real state change or `test_condition` WS API.
 - Dashboard views (2026-10-23): overview, belysning (Automatik card + 9 area
-  cards), utomhus (2 areas + Säsongsbelysning = p10/p1/p6), historik, schema.
+  cards), utomhus (2 areas + Säsongsbelysning = p10/p1), historik, schema.
   Energi view removed (had only the dead `sensor.p4_power`).
 - ZHA remote bindings are **blueprint instances** (added 2026-10-23):
   `automations/hue_dimmer_isacs.yaml` + `styrbar_lekstuga.yaml` use
