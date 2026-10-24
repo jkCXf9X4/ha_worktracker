@@ -195,8 +195,11 @@ automations + schedule helpers. Migration design + P4 requirements: see
 - **9 YAML automations active** across `/config/automations/`
   (include_dir_merge_list). State automations also trigger on
   `binary_sensor.ha_ready -> on` to reconcile lights/locks after a reboot;
-  the outside-light automation re-syncs the daylight flag on `homeassistant
-  start` (numeric_state alone only fires on a threshold crossing).
+  **since 2026-10-24 the outside-light automation also re-syncs on
+  `ha_ready -> on`** — the previous `homeassistant start` event fired before the
+  ZHA lux sensor was up (a `numeric_state` on `unknown` no-ops), leaving the
+  restored `light_outside` stale for hours (numeric_state alone still only fires
+  on a threshold crossing).
 - **9 automation entities + 8 scripts, 0 unavailable** (2026-10-24): twin
   on/off pairs collapsed 6→3 (`night_lights`, `locks`, `outside_light`); the
   4 orphaned ceiling registry entries + 6 more orphans (old lock/night/outside
@@ -247,6 +250,15 @@ automations + schedule helpers. Migration design + P4 requirements: see
   `p4_isac_schedule` (daily, fade-in only). Inputs: area + on/off `input_datetime`
   entities + `input_number` brightness + weekday list (empty=all). Fade
   transition shared via `input_number.fade_transition_seconds` (default 1200).
+  Weekday check uses locale-proof `now().isoweekday() in weekdays` (select
+  values are numeric strings "1".."7", Monday=1); the `fade_out` trigger is a
+  template `at` (`{{ [states(off_entity)] if off_enabled else [] }}`) so a
+  disabled off-time renders an empty list and never fires.
+- **Blueprint select `value:` must be a STRING** (2026-10-24): bare ints like
+  `value: 1` fail blueprint validation with
+  `expected str at ...options[0].value'. Got None` → the instances go
+  `unavailable` (only visible as `automation` setup errors in `ha core logs`).
+  Use quoted `value: "1"` and `| map('int') | list` in comparisons.
 - **Pause toggles** (2026-10-23): `input_boolean.automatik_taklampor` /
   `automatik_nattlampor` / `automatik_las` gate the ceiling, night and lock
   automations — family can pause a behavior from the dashboard (Automatik card,

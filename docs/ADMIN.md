@@ -67,6 +67,11 @@ app-inloggningar — det ger *inte* tillbaka konfigurationen (den finns i lager 
 - **HA omstart:** `bash -lc "ha core restart"` via SSH (eller UI: Settings →
   System → Restart). Efter restart väntar automationerna 1–2 min (startgrace)
   innan de aktiveras.
+- **Readiness-givaren (`binary_sensor.ha_ready`)** beror på integrationen
+  `uptime` (config entry i `.storage/`, skapas via UI/setup-flöde — finns inte
+  i YAML). Friskar man upp `.storage/`/registret helt måste `uptime`
+  återskapas, annars startar ingen automation. Görs det: installera "Uptime"
+  via Settings → Devices & Services → Add integration och vänta på en reboot.
 - **Validera konfig ändring:** `bash -lc "ha core check"` → eventuella fel
   refererar till fil+rad. Rättar du YAML: felen visas innan omstart.
 - **App-enheter / närvaro:** 4 telefoner (Erik: LON-L29/Prinsen · Sara:

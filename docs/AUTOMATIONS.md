@@ -10,7 +10,7 @@ Automatiskt genererat av `tools/summarize.py` — **ändra aldrig den här filen
 | P4: Isacs rum schema (fade-in) | — | — | `automations/room_schedules.yaml` |
 | P4: Lock doors on sleep or away | sensor.home_status → ['sleep', 'away'] · binary_sensor.ha_ready → on | script.lock_doors | `automations/locks.yaml` |
 | P4: Night lamps follow daylight | input_boolean.light_outside → ['on', 'off'] · binary_sensor.ha_ready → on | script.uteljus_sync | `automations/night_lights.yaml` |
-| P4: Outside daylight flag | sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance över input_number.outside_light_on_threshold · sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance under input_number.outside_light_off_threshold · HA-start | script.outside_light_sync | `automations/outside_light.yaml` |
+| P4: Outside daylight flag | sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance över input_number.outside_light_on_threshold · sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance under input_number.outside_light_off_threshold · binary_sensor.ha_ready → on | script.outside_light_sync | `automations/outside_light.yaml` |
 | P4: Sovrum schema (fade-in, vardagar) | — | — | `automations/room_schedules.yaml` |
 | STYRBAR lekstuga | — | — | `automations/styrbar_lekstuga.yaml` |
 

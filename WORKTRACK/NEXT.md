@@ -47,6 +47,31 @@ candidates (#024–#029, all waiting on owner decision). Full history:
       `automatik_*` dashboard toggles are the single pause mechanism). Full log:
       `WORKTRACK/archive/changelog.md`. Exporter `66156a5`.
 
+- [x] **Design-review fixes (2026-10-24)** — closed the "strange/off" items from
+      a fresh review of the post-simplification config (`/tmp/opencode/review_findings.md`):
+      - **outside_light boot re-sync** now triggers on `binary_sensor.ha_ready ->
+        on` instead of raw `homeassistant start` (the start event fires before the
+        ZHA lux sensor is up, so the flag kept its restored value until the next
+        threshold crossing). Exporter `7d1edf0`.
+      - **`p4_christmas_sockets_sync`** now also gated on `automatik_nattlampor`
+        (was only `ha_ready` — inconsistent with `p4_night_lights`, which shares
+        `script.uteljus_sync`). Verified live via `test_condition`: False while the
+        pause toggle is off.
+      - **`room_schedule` blueprint**: weekday check switched from
+        `strftime('%a').lower()` to locale-proof `now().isoweekday() in weekdays`
+        (select values now numeric strings "1".."7" + instances updated); the
+        `fade_out` trigger became a conditional template `at`
+        (`[states(off_entity)] if off_enabled else []`) so a disabled off-time
+        renders an empty list instead of firing a no-op trigger daily.
+      - **`light_on_with_transition`**: label field description now warns that it
+        only touches light-domain members; script gained `mode: restart`.
+      - ADMIN.md documents the `uptime` config-entry dependency behind
+        `binary_sensor.ha_ready` (`.storage`-resident, must be re-created if
+        `.storage` is rebuilt).
+      - Re-verified: 7 automations all `on`, `ha core check` green,
+        `automatik_nattlampor`=off, bedroom light untouched. Exporter `7d1edf0`.
+      Full log: `WORKTRACK/archive/changelog.md`.
+
 Nothing else is in flight.
 
 ## Improvement candidates

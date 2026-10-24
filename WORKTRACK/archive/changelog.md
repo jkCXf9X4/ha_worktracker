@@ -570,3 +570,43 @@ live (Saturday 07:2x, `ha core check` green, exporter `66156a5`):
   (`light.dimmer_fixed_bedroom_light_2`) verified OFF throughout (Sara asleep);
   sovrum only ever touched by the workday-gated schedule — Saturday → inert.
   `tools/summarize.py` regenerated `docs/AUTOMATIONS.md`/`SCHEDULES.md`.
+
+## 2026-10-24 — Design-review fixes round
+
+Source: fresh review of the post-simplification config, findings in
+`/tmp/opencode/review_findings.md`. Applied on the VM, VERIFIED live, exporter
+commit `7d1edf0`.
+
+- **#1 outside_light boot re-sync gap (real bug).** The `homeassistant start`
+  trigger fired before the ZHA lux sensor was up; a `numeric_state` on
+  `unknown` no-ops, so the restored `light_outside` could stay wrong for hours.
+  Replaced with a `binary_sensor.ha_ready -> on` state trigger — the same
+  readiness signal the ceiling/night/lock automations already reconcile on.
+- **#2 christmas-sockets automation not pause-gated.** `p4_christmas_sockets_sync`
+  only checked `ha_ready` while its sibling `p4_night_lights` also gated on
+  `automatik_nattlampor` (both call `script.uteljus_sync`). Added the
+  `automatik_nattlampor` condition. Verified via WS `test_condition`: False while
+  the toggle is off, ha_ready leg still True.
+- **#3 isac dummy off_entity removed.** Blueprint `fade_out` trigger now a
+  template `at` — `{{ [states(off_entity)] if off_enabled else [] }}` — so a
+  disabled off-time renders an empty time list instead of firing a daily no-op
+  trigger at 06:30. Instances unchanged (isac still passes its on-time; sovrum
+  `off_enabled: true` unaffected).
+- **#4 `light_on_with_transition` label foot-gun.** Documented in the field
+  description that labels resolve to light-domain members only (natthorn is
+  light-only; mixed labels need two calls). Kept `light.turn_on` — safer than
+  `homeassistant.turn_on` with brightness/transition data on switch members.
+- **#5 blueprint weekday locale-proof.** `now().strftime('%a').lower()` →
+  `now().isoweekday() in weekdays` with numeric select values "1".."7" (locale
+  independent, matches the numeric axes everywhere else). Instances updated
+  (`sovrum` = "1".."5").
+- **#6 `ha_ready` `.storage` dependency documented** in `docs/ADMIN.md` — the
+  `uptime` config entry is UI/resident in `.storage` (not YAML); a full
+  `.storage` rebuild silently stops every automation via `ha_ready` unless the
+  integration is re-created.
+- **#7 `light_on_with_transition` got `mode: restart`** (was default `single` —
+  a second call during the 20-min fade would have queued 20 min).
+- Verified live: `ha core check` green; all 7 automations `on`; script mode
+  `restart`; isoweekday render = 6/False for saturday; bedroom lamp untouched;
+  `automatik_nattlampor` left off. Exporter `7d1edf0` (5 files). Modest default
+  `today is Saturday` → sovrum fade correctly inert.
