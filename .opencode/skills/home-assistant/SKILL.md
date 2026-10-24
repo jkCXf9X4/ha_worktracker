@@ -429,7 +429,18 @@ recreate as HA groups if ever needed.
   subtypes — always read them from `device_triggers`.
 - Live examples: `/config/automations/styrbar_lekstuga.yaml` (STYRBAR →
   `switch.isac_lekstuga`), `/config/automations/hue_dimmer_isacs.yaml`
-  (RWL021 → `light.isac_tak`).
+  (RWL021 → `light.isac_tak` + bedside `switch.p6`).
+- **Single vs double press (RWL021, verified 2026-10-24):** ZHA device
+  automation distinguishes them as **separate trigger types** —
+  `remote_button_short_press` / `remote_button_double_press` (same subtype
+  `turn_on`). No payload string-matching needed; the triggers are mutually
+  exclusive (a double press fires only `double_press`).
+  `blueprint zha_remote_lights.yaml` implements: single ON = light+optional
+  switch on, double ON = switch on + light off, OFF/dim as usual.
+- **GOTCHA (hit 2026-10-24):** HA's `condition: template` is **falsy for any
+  non-boolean render** — `{{ target_switch }}` renders `"switch.p6"` and
+  evaluates false. Use an explicit boolean, e.g. `{{ target_switch != '' }}`.
+  Same class as numeric_state thresholds: never rely on a string render.
 
 ### Entity rename recipe
 - Find the new ZHA entity via entity_registry unique_id prefix (= the IEEE),

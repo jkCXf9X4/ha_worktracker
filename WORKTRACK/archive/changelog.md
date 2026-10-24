@@ -756,3 +756,28 @@ Workspace/repo: documented in the commit message of this same change set.
   `homeassistant/expose_entity/list` vs `/api/states`; removed with
   `should_expose: false`. (Skill §Family chat agent updated with the recipe +
   the flow_id-in-URL gotcha.)
+
+## 2026-10-24 — Hue dimmer Isac + bedside lamp (single/double press)
+
+- **Owner request:** also attach `switch.p6` (Isacs sänglampa) to the Hue
+  dimmer in Isac's room; single ON press → both on; double ON press → only the
+  bedside lamp. Implemented in the existing blueprint
+  `zha_remote_lights.yaml` + `hue_dimmer_isacs.yaml` (commit `720ca7d`):
+  - Blueprint gained optional `target_switch` input + a
+    `remote_button_double_press` trigger. Single ON = light + switch on
+    (guarded), double ON = switch on + light off, OFF = both off, dim paddles
+    unchanged (light only).
+  - **Verified live on-device:** single press → `light.isac_tak` + `switch.p6`
+    on; double press → p6 on + ceiling off; OFF → both off. Trigger identity
+    confirmed via `trace/get` (single = `remote_button_short_press`, double =
+    `remote_button_double_press` — mutually exclusive, no payload matching).
+  - **Debug method note:** probed with a throwaway automation (device triggers
+    → `persistent_notification`) to confirm which trigger types fire; raw
+    `zha_event.R` dumps show `on_press`/`on_press` for single, `on_double_press`
+    for double. This is the reusable pattern — never string-match `zha_event`.
+- **GOTCHA recorded in the skill:** HA `condition: template` is **falsy for any
+  non-boolean render** — `{{ target_switch }}` → `"switch.p6"` evaluated false;
+  fixed with `{{ target_switch != '' }}`. Same class as the numeric_state
+  `above:`/`below:` gotcha (entity-id-or-float only).
+- Config exported on the VM (`ha apps restart 68413af6_git-exporter`,
+  "Exporter finished"). Local `ha_config` clone synced to `720ca7d`.

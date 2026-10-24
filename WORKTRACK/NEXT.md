@@ -39,6 +39,12 @@ weekday bedtime — "morning after is early"). No regression observed.
 
 ## Recently completed (working-log shorthand; detail in the changelog)
 
+- **2026-10-24 — Hue dimmer Isac + bedside lamp** (`720ca7d`): `switch.p6`
+  attached to the hue dimmer via `zha_remote_lights` blueprint's new optional
+  `target_switch`; single ON = ceiling+bedside, double ON = bedside only +
+  ceiling off, OFF = both. Verified live. Skill + agent docs (handbook/examples,
+  `b3136d1`) updated with the single-vs-double-trigger pattern and the
+  `condition: template` boolean-render gotcha. Detail: changelog 2026-10-24.
 - **2026-10-24 — #027 RESOLVED + agent prompt refresh + exposure cleanup:**
   owner confirmed the `home_status` Sunday axis (Sun morning = weekend, Sun
   evening = weekday bedtime) — deployed template already matches;
