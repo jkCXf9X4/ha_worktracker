@@ -159,95 +159,14 @@ organization.
 
 ---
 
-## Part 2 — Audit of this build (`config/`)
+## Part 2 — Audit of this build (archived)
 
-### Already conformant (good)
-
-- **UI + YAML split** is right: devices/integrations in `.storage`, everything
-  family/agent-facing in YAML dirs (`configuration.yaml` is a clean 29-line
-  index of `!include`/`!include_dir_*`).
-- **`!include_dir_merge_list` for automations/scenes/template**, `_merge_named`
-  for `input_*` helpers — exactly the recommended directory pattern.
-- **Secrets hygiene**: Yale creds reference `!secret`, exporter excludes
-  `secrets.yaml`/`.storage`, secrets engine embargos output. Good.
-- **`initial:` removed from all schedule helpers** (`input_datetime/schedules.yaml`,
-  `input_number/schedules.yaml`, `input_boolean/state_machine.yaml:8-10`) — the
-  restart-overwrite bug is fixed and the why is documented in-file.
-- **Scripts over duplicated action lists**: `light_on_with_transition` is reused
-  by sovrum + isac; `nattmode` script fixes the non-templated-scene problem.
-  `korridor_blink` demonstrates the preferred native path for assa-visible
-  named actions (script → `script.*` LLM tool).
-- **Blueprints for remote binding** (ZHA RWL021 + STYRBAR) with `trigger:
-  device` — modern and correct.
-- **mode set explicitly** on the scripts that need it (`korridor_blink: restart`,
-  `nattmode: single`).
-- **`homeassistant: start` triggers + full-state conditions** for restart
-  reconciliation (outside_light, and the `ha_started` gate). Edge-trigger +
-  context-condition idiom respected.
-- **Hysteresis implemented as two numeric_state automations with thresholds as
-  `input_number` helpers** — clean, live-editable, no template soup.
-
-### Deltas worth acting on
-
-1. **Startup-grace gate repeats itself in every automation.**
-   `input_boolean.ha_started` + the same 2-condition checklist appear in
-   ceiling_lights (×4), night_lights (×2), locks (×2), sovrum (×2), isac (×1).
-   Alternative pattern: keep the single `00_startup_grace` marker, but give the
-   other automations a shared structure via **one blueprint** (input: the
-   entities/group, the expected states, the action) — that collapses ~5 blocks
-   into one install. Or accept the repetition as "explicit > clever"; it is
-   readable and correct. Recommendation: blueprint-ify only if the pattern
-   appears ≥3 more times; otherwise it is fine.
-
-2. **Four ceiling automations share one shape** (`ceiling_lights.yaml`).
-   This is the textbook Taras consolidation case: one state trigger over
-   `sensor.home_status` + `light_outside` + `ha_started`, a `choose` on
-   `{{ trigger.to_state.object_id }}`/`attribute`, mapping states → action.
-   Would cut 99→~35 lines and future changes touch one place. Trade-off: the
-   current four are trivially greppable & self-documenting per behavior. This
-   is a *style* choice — do it only if the build wants unit-count discipline.
-
-3. **`groups.yaml` vs `scenes.yaml` duplicate membership** — both already carry
-   the same light lists (`ceiling_lamps` group / "Taklampor på" scene). Keep
-   the in-file warning honest, or derive scenes from groups. Minor.
-
-4. **Sleep/away time logic lives in a template state machine**
-   (`template/home_status.yaml`): weekday lists, `input_datetime` reads,
-   `as_timestamp` math and availability guards. It is correct and the helper-
-   driven design is right, but it does more math than needed — a lexicographic
-   `HH:MM:SS` compare is equivalent and ~70% shorter. The *native `schedule`
-   helper* was considered as the replacement but is **wrong for this build**:
-   no runtime service exists to edit block times (family/agent edits
-   `input_datetime`), blocks can't cross midnight, and the two weekday axes
-   don't map. Full analysis + a candidate patch: `docs/deep_dive_home_status.md`.
-
-5. **`group.family` uses `person.*`** — correct and what the docs recommend for
-   presence. No change.
-
-6. **Labels are unused.** Christmas sockets are handled through a dedicated
-   `christmas_sockets` group + a sync automation with `choose`. Given the goal
-   is "seasonal ≠ year-round", a **label** on the four sockets would let the
-   automation target the label and dissolve the rotate-in/out group editing
-   (#020). The current approach works; labels are the incremental step to
-   remove group-editing churn.
-
-7. **Trigger duplication via explicit entity repetition**: `to:`/`state:` strings
-   are quoted (`'on'`, `'off'`) consistently — good. `homeassistant.turn_on/off`
-   on groups is appropriate (groups have no typed `light.` service). No change.
-
-8. **A deprecated-style artifact survives**: `deprecated/` holds the archived
-   `script_engine` files (intentional, part of git history) — fine. `logger`
-   block custom log levels for `doorman`/`config_tools` are deliberate.
-
-### What I deliberately did NOT change
-
-- The `ha_started` gate *semantics* (2-min grace) is a design decision that
-  predates this review; it's correct and documented.
-- `looking at nothing` — no open-webhook/security issues found in this config
-  (no webhooks, no remote access enabled).
-- The four ceiling automations' readability over consolidation.
-
----
+The dated 2026-10-23 audit of `config/` (conformance list + deltas, all since
+implemented) is archived at `docs/archive/build_audit_2026-10-23.md`. The
+deliverables it drove — labels (`taklampa`/`natthorn`/`sasong`/`utelampa`),
+pause toggles (`automatik_*`), the Taras ceiling consolidation, `home_status`
+simplification, and the `ha_ready` startup gate — are all live and summarized
+in `.opencode/skills/home-assistant/SKILL.md` + `WORKTRACK/NEXT.md`.
 
 ## Sources
 

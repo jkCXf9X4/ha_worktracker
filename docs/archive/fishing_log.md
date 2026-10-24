@@ -1,7 +1,12 @@
 # Light identification — fishing log (2026-10-23)
+
+> **Status: COMPLETED — archived reference.** Used to seed the device→area map
+> (now live in the skill + the area registry on the VM). Kept as the one-time
+> physical-identification record; nothing here is pending.
+
 # Confirmed by physically watching each blink. **APPLIED to the VM 2026-10-23**
 # (device->area assignments live; exporter `643e941`; `ha core check` green).
-# Used to seed the device->area map in docs/deep_dive_organization.md.
+# Used to seed the device->area map in docs/archive/deep_dive_organization.md.
 
 | Entity | Friendly | Physical location (confirmed) | Area |
 |--------|----------|-------------------------------|------|

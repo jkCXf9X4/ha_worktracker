@@ -1,31 +1,20 @@
 # P8 — Agent config tools (custom component `config_tools`)
 
-Status: **DEPLOYED + VERIFIED 2026-10-22 (v0.2.0)** — 7 tools live on the VM
-(`/config/custom_components/config_tools/`), `config_tools:` in
-`configuration.yaml`, HA restarted, and the tools exercised end-to-end through
-the chat agent (`glob_files`, `read_file`, `write_file`+reload, revert on
-`check_config` failure, **`find_device` + `device_triggers`**). The two registry
-tools close the pre-existing gap: the agent can now resolve a friendly device
-name to a `device_id` and enumerate the device's **live** trigger types —
-enabling it to wire a *new* device-automation (and confirm real subtypes before
-editing). `bind_remote` stays deliberately absent (the generic tools now cover
-that flow). The 5 schedule-writer scripts were **removed** from `scripts.yaml`
-(owner decision: *Remove them entirely*) — schedule edits now go through
-generic tools + live helper state is out of the agent's reach.
-
-**P9 (2026-10-23): `config_tools__call_service` is DEPLOYED + VERIFIED live
-(v0.3.0, hardened v0.3.1)** — component + handbook on the VM, core restarted,
-exercised through the chat agent (real `light.turn_off`/`turn_on` state change;
-typed `data` rejects bad fields with a "did you mean" parse error). **v0.3.1
-hardening:** admin gate dropped for `call_service` (now exposure-bound only, per
-HA's native assistant-access model), `data` is a typed probatio schema (no more
-opaque free-form object), writes are atomic (tempfile + `os.replace`), and the
-component logs every call via `_LOGGER`. Native alternative added:
-`script.korridor_blink` surfaces to the agent as a `script.*` tool with `fields`
-(schema from `ActionTool`) — the HA-blessed path for a named blink action.
-Exported via Git Exporter (`989e5a0` v0.3.0 + v0.3.1, mirror sha-verified).
-§3.6 documents design/mechanism; rollout + findings in
-`docs/archive/call_service_tool_P9_PLAN.md`.
+Status: **DEPLOYED + VERIFIED, v0.4.0 (2026-10-24)** — 10 tools live on the VM
+(`/config/custom_components/config_tools/`, manifest `version: 0.4.0`),
+`config_tools:` in `configuration.yaml`, HA restarted, and the tools exercised
+end-to-end through the chat agent. Toolset: `read_file`, `glob_files`,
+`write_file`, `check_config`, `reload`, `find_device`, `device_triggers`,
+`call_service` (P9), and — added in **v0.4.0** — `set_label` (entity-registry
+labels) + `restart_core` (admin). The two registry tools close the
+pre-existing gap: the agent can now resolve a friendly device name to a
+`device_id`, enumerate the device's **live** trigger types, and relabel entities
+via the registry — no hand-editing `.storage`. `bind_remote` stays deliberately
+absent (the generic tools now cover that flow). The 5 schedule-writer scripts
+were **removed** from `scripts.yaml` (owner decision: *Remove them entirely*);
+live `input_*` helper values are not changeable by the agent — writes target
+reloadable YAML only (v0.4.0 now also allows `input_*/*.yaml` writes, which
+report "needs restart_core" since helpers have no reload service).
 
 Design (mechanism + rationale) below; rollout executed per §5.
 
@@ -63,17 +52,17 @@ appear in the same `assist` API the OpenRouter agent already uses.
 
 | Rule | Detail |
 |------|--------|
-| Write allowlist | `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml` — the reloadable domains only. |
+| Write allowlist | `automations/*.yaml`, `scripts.yaml`, `groups.yaml`, `template/*.yaml`, `input_boolean/*.yaml`, `input_number/*.yaml`, `input_datetime/*.yaml` (helpers: no reload service → report "needs restart_core", v0.4.0) — the reloadable domains + helpers. |
 | Read/glob allowlist | Everything under `/config` **except** `secrets.yaml`, `.storage/`, `*.db`, `*.db-wal`, `*.db-shm`, `home-assistant.log*`, `configuration.yaml` (read OK? no — also exclude `groups.yaml.bak`). No paths outside `/config`. |
 | Hard denylist (both) | `configuration.yaml`, `secrets.yaml`, `.storage`, DBs, logs, `custom_components/config_tools/` itself. |
-| Admin gating | `read_file`/`glob_files` → everyone; `call_service` → any logged-in user, exposure-bound (`async_should_expose`); `write_file`/`check_config`/`reload` → reject unless caller is admin + `llm_context.assistant` is the family agent's assistant name. |
+| Admin gating | `read_file`/`glob_files` → everyone; `call_service` → any logged-in user, exposure-bound (`async_should_expose`); `write_file`/`check_config`/`reload`/`set_label`/`restart_core` → reject unless caller is admin + `llm_context.assistant` is the family agent's assistant name. |
 | Size caps | read caps at ~8k chars (token budget); write rejects >64k; glob capped at 100 hits. |
 | No secrets in output | read of `secrets.yaml` impossible by allowlist; redact `!secret`-referenced values never read anyway. |
 | Determinism | `bind_remote` resolves device/trigger from registry + live enum; agent never invents `device_id`/subtypes. |
 
 ## 3. Tools (domain `config_tools`) — implemented
 
-All **8** are implemented in `custom_components/config_tools/`:
+All **10** are implemented in `custom_components/config_tools/`:
 `manifest.json` (`platforms: ["llm"]`), `__init__.py` (`CONFIG_SCHEMA =
 cv.empty_config_schema`), `llm.py` (`async_get_tools` returns all tools
 for `api_id == "assist"`), `tools.py` (pure-Python + HA registry/device-automation
@@ -177,8 +166,26 @@ helpers; no shell, no new deps).
   per-assistant permission). Admin stays on the config-writing tools where the
   blast radius is far larger.
 - Component layout addition: `const.py` (`ALLOWED_SERVICE_ACTIONS`), `tools.py`
-  (`CallServiceTool`, typed data, atomic write, `_LOGGER`), `llm.py` (8th tool),
+  (`CallServiceTool`, typed data, atomic write, `_LOGGER`), `llm.py` (tool #8),
   `manifest.json` → `0.3.1` (`integration_type: service`, honest `iot_class`).
+
+### `config_tools__set_label` — added v0.4.0
+- params: `entity_id`, `labels` (list to set as the entity's labels, replaces).
+- Called on the **entity registry** (`registry.async_update_entity(entity_id,
+  labels=[...])`), with label-registry validation (`label_registry.async_get`).
+  Admin-gated like `write_file`/`check_config`/`reload`; returns the new label
+  list. Verified live end-to-end by the chat agent (returned
+  `["slack_borta","taklampa"]` on the room dimmer). This is how the agent
+  assigns/updates the role labels (`taklampa`, `sasong`, …) without touching
+  `.storage` by hand.
+- **HA 2026.10 API note:** entity-registry updates ARE the sync
+  `EntityRegistry.async_update_entity(entity_id, **changes)` (returns the entry) —
+  `async_update` / `registry.entities.async_update` do not exist.
+
+### `config_tools__restart_core` — added v0.4.0
+- params: none.
+- Admin-gated; schedules `homeassistant.restart`. Returns an "ok, restarting"
+  message. Recomputation/state validation before calling is the caller's job.
 
 ### `config_tools__bind_remote` — **NOT BUILT** *(superseded by v0.2.0 tools)*
 - **Owner decision 2026-10-22: "way too specific" → dropped.** Its two real
@@ -193,8 +200,8 @@ helpers; no shell, no new deps).
 manifest.json      # domain, version, "platforms": ["llm"]
 __init__.py        # async_setup() -> True; CONFIG_SCHEMA = cv.empty_config_schema
 const.py           # DOMAIN = "config_tools"; ALLOWED_SERVICE_ACTIONS (P9)
-llm.py             # async_get_tools -> LLMTools(tools=[...8 tools])
-tools.py           # path canonicalization, allowlist/denylist, in-memory revert, CallServiceTool
+llm.py             # async_get_tools -> LLMTools(tools=[...10 tools])
+tools.py           # path canonicalization, allowlist/denylist, in-memory revert, CallServiceTool, SetLabelTool, RestartCoreTool
 ```
 - Implementation notes: pure stdlib (`pathlib`); all returns are `ToolResult`
   dicts (`data={"result"|"error": ...}`); write flow snapshots to memory (no
@@ -265,8 +272,10 @@ Both docs are readable by the agent via `config_tools__read_file` (under
 
 ## 7. Out of scope
 
-- No bash, no `shell_command`, no README/`*.md` writes, no `input_*` writes
-  (not reloadable: edits only take effect on core restart), no editing the
+- No bash, no `shell_command`, no README/`*.md` writes, no editing the
   component's own files, no ZHA pairing/network.
+- `input_*/*.yaml` writes (v0.4.0) are allowed but NOT reloadable — the tool
+  reports "needs restart_core"; helper live values remain out of the agent's
+  reach (family edits them on the dashboard).
 - `bind_remote` not built (owner decision); device-automation wiring is a
   manual build-agent step for now.

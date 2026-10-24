@@ -1,15 +1,18 @@
 # Home Assistant — Versioning, Family Chat Agent & Cleanup Plan
 
-Status: **P0–P7 done** (all phases complete 2026-10-22). P4 = YAML automation
-go-live 2026-10-21 (`script_engine` retired), P5 = family dashboard, P6 =
-family chat agent (OpenRouter), P7 = summaries + ops docs + final verification.
-Current state tracked in `WORKTRACK/` (live tracker: `NEXT.md`; history:
-`archive/`).
-Repo: `hkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to GitHub by the **Git Exporter** add-on (files land under `config/` in the repo). Management docs live in this workspace repo (`docs/`, `WORKTRACK/`, pushed to `ha_worktracker`); only `hue_zha_migration.md` is mirrored under `/config/docs/` (full docs-sync declined, backlog #014).
+Status: **all phases complete (P0–P10, 2026-10-24)** — system in normal
+operation. This file is the historical plan/goal + phase log (kept for the
+design record); the live "where are we / what's next" lives in `WORKTRACK/NEXT.md`
+and the full delivery record in `WORKTRACK/archive/changelog.md`. P4 = YAML
+automation go-live 2026-10-21 (`script_engine` retired), P5 = family dashboard,
+P6 = family chat agent (OpenRouter), P7 = summaries + ops docs + final
+verification, P8–P10 = agent config tools + review/collapse rounds (see the
+progress log below).
+Repo: `jkCXf9X4/ha_config` — source of truth is the HA `/config`, mirrored to GitHub by the **Git Exporter** add-on (files land under `config/` in the repo). Management docs live in this workspace repo (`docs/`, `WORKTRACK/`, pushed to `ha_worktracker`); only `hue_zha_migration.md` is mirrored under `/config/docs/` (full docs-sync declined, backlog #014).
 
 **Progress log**
 - P0 — SSH access verified. First as `hassio` (read-only); later switched add-on to `ssh.username: root` (intended root shell) for full write + `ha` CLI access. HA Core 2026.9.2, OS 18.2.
-- P1 — Git Exporter add-on installed & pushing to `https://github.com/hkCXf9X4/ha_config` (`main`). Excludes configured: `.storage/`, `secrets.yaml`, `.ssh/`, DBs, logs. `pull_before_push: true` (remote changes flow into `/config`). Config validated (`ha core check`). First commit after fixes: `65acd1f`.
+- P1 — Git Exporter add-on installed & pushing to `https://github.com/jkCXf9X4/ha_config` (`main`). Excludes configured: `.storage/`, `secrets.yaml`, `.ssh/`, DBs, logs. `pull_before_push: true` (remote changes flow into `/config`). Config validated (`ha core check`). First commit after fixes: `65acd1f`.
 - P2a — Inventory snapshot: `docs/archive/inventory.md` (958 entities / 211 devices / legacy custom components).
 - Discovery — All automations live in the custom Python **`script_engine`** component. Requirements extracted + YAML migration design: `docs/archive/automation_requirements.md`.
 - Fixes during P1 — moved legacy `samsungtv_tizen` host/mac into `secrets.yaml` (exporter’s IP/MAC check would block commits); rewrote a malformed `secrets.yaml` (trailing-newline bug + bad sed). **Yale password was exposed in plaintext on screen once — rotate it. The GitHub fine-grained PAT was also printed once — rotate it** (replace in the add-on; ~1 min, config keeps working).
@@ -152,13 +155,15 @@ ha_config/ (this repo = build agent workspace)
     deprecated/             # quarantined old automations
     secrets.yaml            # NEVER pushed
   docs/
-    PLAN.md                 # this document
+    PLAN.md                 # this document (historical plan + phase log)
     ADMIN.md                # operator how-to: restore, rollback, backups
+    BEST_PRACTICES.md       # practices reference (Part 1); audit → archive/
+    AGENT_TOOLS.md          # config_tools component reference (v0.4.0)
     SCHEDULES.md            # family-readable schedule reference (generated)
     AUTOMATIONS.md          # automation reference (generated)
-    inventory.md            # → archived (docs/archive/inventory.md)
-    cleanup_report.md       # → archived (docs/archive/cleanup_report.md)
-    hue_zha_migration.md    # → archived (docs/archive/); device map in the skill
+    archive/                # completed/historical docs (all "done" inputs live
+                            #   here: inventory, cleanup_report, specs, deep
+                            #   dives, fishing log, build audit, P9 plan)
   tools/
     summarize.py            # generates SCHEDULES.md / AUTOMATIONS.md
     cleanup/                # inspection + classification helpers

@@ -1,7 +1,13 @@
 # Deep dive — the `home_status` state machine (awake / sleep / away)
 
-Status: **analysis + candidate patch, not yet deployed** (owner verifies before
-apply). Review this with `docs/BEST_PRACTICES.md` §2 points 4 & 6.
+> **Status: COMPLETED/APPLIED 2026-10-24 — archived reference.** Option B
+> (lexicographic `HH:MM:SS` compare) was implemented as #024 in
+> `template/home_status.yaml`; the `next_wake`/`next_bedtime` attributes land as
+> #033 in the same file. Nothing here is pending — kept for the decision record.
+> Live state: `WORKTRACK/NEXT.md`.
+
+Historical analysis (original header): **analysis + candidate patch, not yet deployed**
+(written 2026-10-23; review alongside `docs/BEST_PRACTICES.md` §1).
 
 ## The machine today
 

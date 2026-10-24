@@ -1,9 +1,16 @@
 # Deep dive — improve organization: rooms/areas, helpers, templates, scripts, automations
 
-Status: **analysis, not deployed.** Reflects the live instance 2026-10-23 (area
-registry + device registry pulled read-only over SSH) and `config/` mirror.
-Every proposal is gated on owner decision; workspace candidates are logged in
-`WORKTRACK/NEXT.md` (#030+). Best-practice baseline: `docs/BEST_PRACTICES.md`.
+> **Status: COMPLETED/APPLIED 2026-10-23/24 — archived reference.** All
+> proposals #030–#035 implemented (area registry rebuilt, labels
+> `taklampa`/`natthorn`/`sasong`/`utelampa`, pause toggles, goodnight script,
+> scenes deleted, area-card dashboard). Live state + changelog:
+> `WORKTRACK/NEXT.md` + `WORKTRACK/archive/changelog.md`. The device→area map is
+> kept live in the skill (`.opencode/skills/home-assistant`); the physical
+> identification log is `docs/archive/fishing_log.md`.
+
+Historical analysis (original header): **analysis, not deployed** (written
+2026-10-23; reflects the live instance pulled read-only over SSH before the
+rounds below were applied).
 
 ---
 
@@ -288,7 +295,7 @@ superseded/sharpen by #031).
   gastrum_tak + laslampa → Gästrum; dimmer_fixed_livingroom_light +
   bokhylla + isac_lekstuga + STYRBAR → Vardagsrum; dimmer_fixed_bedroom_light_2
   → Sovrum; ute_huvudentre → Utebelysning; hobby_rum_fonster → Hobbyrum (new);
-  p10 → Uterum; p2 → Kök. Full log: `docs/fishing_log.md`.
+  p10 → Uterum; p2 → Kök. Full log: `docs/archive/fishing_log.md`.
 
 Remaining (small):
 1. Enable pause toggles (#032), `goodnight` script (#034)?

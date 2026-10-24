@@ -10,7 +10,7 @@ are* and *what's next*.
 
 | Path | Purpose |
 |------|---------|
-| `WORKTRACK/NEXT.md` | **Living** tracker: open work (#020), improvement candidates (#024–#029), phase state, standing decisions |
+| `WORKTRACK/NEXT.md` | **Living** tracker: open work (currently none — all closed), phase state, standing decisions |
 | `WORKTRACK/archive/changelog.md` | Chronological log of changes/decisions — **still appended to**; the record of everything delivered |
 | `WORKTRACK/archive/board.md` | Historical status board (superseded by NEXT.md + changelog) |
 | `WORKTRACK/archive/backlog.md` | Historical issue log (superseded by NEXT.md + changelog) |

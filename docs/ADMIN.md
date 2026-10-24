@@ -79,8 +79,9 @@ app-inloggningar — det ger *inte* tillbaka konfigurationen (den finns i lager 
 - **Fjärrkontroller (ZHA):** Hue dimmer "Isac" och STYRBAR "lekstuga" binder
   via device-automations. Tappar en knapp sin binding → para om, se
   `.opencode/skills/home-assistant` (ZHA-sektionen).
-- **Utelampans sensor** (Aqara) är batteridriven och har varit ur batteri sedan
-  2026-10-19: byt batteri, enheten behålls.
+- **Utelampans sensor** (Aqara) är batteridriven — se till att batteriet räcker
+  (dag/natt-automationerna beror på den): är sensorn `unavailable` länge →
+  byt batteri, enheten behålls.
 
 ## Skydd & hemligheter
 
@@ -99,5 +100,5 @@ app-inloggningar — det ger *inte* tillbaka konfigurationen (den finns i lager 
 - Svara ärligt på "vad ändrades?" → Git Exporter-loggen / GitHub-historik.
 - Kör `python3 tools/summarize.py` + commit vid varje konfig-ändring så
   `docs/SCHEDULES.md` / `docs/AUTOMATIONS.md` aldrig driver från verkligheten.
-- Titta då och då i `WORKTRACK/NEXT.md` för öppna spår (#020 säsongsgrupper
-  + förbättringskandidaterna #024–#029).
+- Titta då och då i `WORKTRACK/NEXT.md` för öppna spår (#027 owner-verifiering;
+  resten av kandidaterna #024–#035 är klara).

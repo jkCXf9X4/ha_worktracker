@@ -727,3 +727,32 @@ changes pushed over SSH → `ha core check` green → core restart → exporter
   sasong off (christmas off), all 5 taklampa on (awake+dark), locks unchanged;
   `binary_sensor.light_outside` renders from lux (72 → off); no errors in
   `home-assistant.log`. Pre-change backups in `/tmp/opencode/hz_prepatch/`.
+
+## 2026-10-24 — repo cleanup + agent prompt refresh + exposure cleanup + #027 closed
+
+Workspace/repo: documented in the commit message of this same change set.
+
+- **Repo cleanup/refactor** (see the session): archived the completed deep-dive
+  docs (`docs/archive/`) with superseded banners; split the dated `BEST_PRACTICES`
+  build-audit into `docs/archive/build_audit_2026-10-23.md`; collapsed
+  `WORKTRACK/NEXT.md` to genuinely-open items only; refreshed `AGENT_TOOLS.md`
+  to v0.4.0; fixed stale facts (ADMIN sensor note, PLAN status + repo handle
+  `hkCX…`→`jkCX…`); removed `.ruff_cache/`.
+- **#027 RESOLVED (owner 2026-10-24):** Sunday morning = weekend wake,
+  Sunday evening = weekday bedtime ("morning after is early"). The deployed
+  `home_status` template already matches (wake axis Mon–Fri/Sat–Sun; bed axis
+  `wd in [6,0,1,2,3]` = Sun–Thu weekday bed). No config change needed.
+- **Chat-agent system prompt REFRESHED to v0.4.0** via the reconfigure flow
+  (entry `01M5J96GD…`, subentry `01M5J9HQ…`; the init POST returns `flow_id`,
+  the step POST carries the flow_id in the URL — putting it in the body 400s
+  with `not a valid option at 'flow_id'`). The "TEKNISK DEL" block now names
+  all 10 tools (`set_label`, `restart_core`, `call_service`), the `script.*`-
+  tool preference, and the labels/areas architecture. Persona untouched.
+  Verified in `.storage` (prompt 3307 → 5323 chars).
+- **Stale exposure entries REMOVED (5):** `group.ceiling_lamps`,
+  `group.night_lamps`, `scene.taklampor_pa`, `scene.nattlampor_pa`,
+  `scene.nattmode` — deleted entities group/scenes from 2026-10-23 left inert
+  `expose_entity` entries. Found by cross-referencing
+  `homeassistant/expose_entity/list` vs `/api/states`; removed with
+  `should_expose: false`. (Skill §Family chat agent updated with the recipe +
+  the flow_id-in-URL gotcha.)
