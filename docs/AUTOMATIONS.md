@@ -5,21 +5,13 @@ Automatiskt genererat av `tools/summarize.py` — **ändra aldrig den här filen
 | Automation | När | Utför | Källa |
 |------------|-----|-------|-------|
 | Hue dimmer Isacs | — | — | `automations/hue_dimmer_isacs.yaml` |
-| P4: Ceiling lights off on away | sensor.home_status → away · input_boolean.ha_started → on | homeassistant.turn_off | `automations/ceiling_lights.yaml` |
-| P4: Ceiling lights off when awake & bright | sensor.home_status → awake · input_boolean.light_outside → on · input_boolean.ha_started → on | homeassistant.turn_off | `automations/ceiling_lights.yaml` |
-| P4: Ceiling lights on when awake & dark | sensor.home_status → awake · input_boolean.light_outside → off · input_boolean.ha_started → on | homeassistant.turn_on | `automations/ceiling_lights.yaml` |
-| P4: Christmas sockets follow helper | input_boolean.christmas_lights ändras | — | `automations/night_lights.yaml` |
-| P4: HA ready | HA-start | input_boolean.turn_off, input_boolean.turn_on | `automations/00_startup_grace.yaml` |
-| P4: Isacs room morning fade-in | klockan (input_datetime.isac_on_time) | script.light_on_with_transition | `automations/isac_room.yaml` |
-| P4: Lock doors on away | sensor.home_status → away · input_boolean.ha_started → on | lock.lock | `automations/locks.yaml` |
-| P4: Lock doors on sleep | sensor.home_status → sleep · input_boolean.ha_started → on | lock.lock | `automations/locks.yaml` |
-| P4: Night lamps off when bright | input_boolean.light_outside → on · input_boolean.ha_started → on | homeassistant.turn_off | `automations/night_lights.yaml` |
-| P4: Night lamps on when dark | input_boolean.light_outside → off · input_boolean.ha_started → on | homeassistant.turn_on | `automations/night_lights.yaml` |
-| P4: Night scene on sleep | sensor.home_status → sleep · input_boolean.ha_started → on | script.turn_on | `automations/ceiling_lights.yaml` |
-| P4: Outside daylight flag off | sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance under input_number.outside_light_off_threshold · HA-start | input_boolean.turn_off | `automations/outside_light.yaml` |
-| P4: Outside daylight flag on | sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance över input_number.outside_light_on_threshold · HA-start | input_boolean.turn_on | `automations/outside_light.yaml` |
-| P4: Sovrum morning fade-in | klockan (input_datetime.sovrum_on_time) · vardagar (mån–fre) | script.light_on_with_transition | `automations/sovrum.yaml` |
-| P4: Sovrum off | klockan (input_datetime.sovrum_off_time) · vardagar (mån–fre) | light.turn_off | `automations/sovrum.yaml` |
+| P4: Ceiling lights follow home status / daylight | ['sensor.home_status', 'input_boolean.light_outside'] → ['awake', 'sleep', 'away', 'on', 'off'] · binary_sensor.ha_ready → on | script.ceiling_lights_sync | `automations/ceiling_lights.yaml` |
+| P4: Christmas sockets follow helper | input_boolean.christmas_lights ändras | script.uteljus_sync | `automations/night_lights.yaml` |
+| P4: Isacs rum schema (fade-in) | — | — | `automations/room_schedules.yaml` |
+| P4: Lock doors on sleep or away | sensor.home_status → ['sleep', 'away'] · binary_sensor.ha_ready → on | script.lock_doors | `automations/locks.yaml` |
+| P4: Night lamps follow daylight | input_boolean.light_outside → ['on', 'off'] · binary_sensor.ha_ready → on | script.uteljus_sync | `automations/night_lights.yaml` |
+| P4: Outside daylight flag | sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance över input_number.outside_light_on_threshold · sensor.lumi_lumi_sen_ill_mgl01_8b21773c_illuminance under input_number.outside_light_off_threshold · HA-start | script.outside_light_sync | `automations/outside_light.yaml` |
+| P4: Sovrum schema (fade-in, vardagar) | — | — | `automations/room_schedules.yaml` |
 | STYRBAR lekstuga | — | — | `automations/styrbar_lekstuga.yaml` |
 
 ## Läs mer

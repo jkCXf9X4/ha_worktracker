@@ -114,7 +114,9 @@ config at `/config/docs/`.
   plugs are on ZHA (ConBee II) with canonical entity IDs; canonical ID ↔ IEEE
   table in the ZHA section below. Full workbook:
   `docs/archive/hue_zha_migration.md`.
-- Integrations: **zha (ConBee II)**, tuya, met, mobile_app ×4 phones. Removed
+- Integrations: **zha (ConBee II)**, tuya, met, mobile_app ×4 phones, **uptime**
+  (added 2026-10-24 as the readiness-gate source: `sensor.uptime` = boot
+  timestamp, drives `binary_sensor.ha_ready`). Removed
   2026-10-20/21 (do not expect their entities): hue, samsungtv, dlna_dmr,
   spotify, cast, tibber, unifi.
 - **Tuya re-authed 2026-10-21** — entry `916b4f19…` (title
@@ -172,28 +174,30 @@ automations + schedule helpers. Migration design + P4 requirements: see
   `/config/input_*/schedules.yaml` (wake 06:45, bedtime 21:00 Sun–Thu /
   21:30 Fri–Sat). Template is **trigger-based via `time_pattern` every minute**
   (added 2026-10-23 — a state-based template never re-ran on the clock, so the
-  awake/sleep transitions were stuck until someone arrived/left).
+  awake/sleep transitions were stuck until someone arrived/left). Derived
+  attributes on it (2026-10-24): `is_workday`, `next_wake`, `next_bedtime`.
 - Locks on sleep/away (`automations/locks.yaml`); outside-light lux hysteresis
   (400 on / 150 off, **read live from the input_number helpers**
   `outside_light_on/off_threshold` via `above:`/`below:` entity refs)
   (`outside_light.yaml`); ceiling + night lamps — **since 2026-10-23 the four
   ceiling automations are ONE data-driven automation**
   (`p4_ceiling_lights_follow_home_status_daylight`: state trigger on
-  `home_status`+`light_outside` + a `choose` on the current states; action
-  targets `label.taklampa`; sleep branch runs `script.nattmode`) plus
-  `night_lights.yaml` (targets `label.utelampa` + `label.sasong`);
-  Sovrum + Isac morning fades (`sovrum.yaml`, `isac_room.yaml` — now target the
-  `sovrum`/`isacs_rum` **areas** through `script.light_on_with_transition`,
-  which gained an `area` field);
-  single startup grace `00_startup_grace.yaml` (`input_boolean.ha_started`,
-  forced off every boot via `initial: false`, on after 2 min; the 1-min/2-min
-  split + `ha_started_2min` were removed 2026-10-23).
-- **11 YAML automations active** across `/config/automations/`
+  `home_status`+`light_outside`; the 4-way `choose` now lives in
+  `script.ceiling_lights_sync`, action targets `label.taklampa` /
+  `label.slack_borta`, sleep branch runs `script.nattmode`) plus
+  `night_lights.yaml` (both automations call `script.uteljus_sync`);
+  Sovrum + Isac morning fades — **since 2026-10-24 two instances of the
+  `room_schedule` blueprint** in `automations/room_schedules.yaml`, targeting the
+  `sovrum`/`isacs_rum` **areas** through `script.light_on_with_transition`;
+  readiness gate **`binary_sensor.ha_ready`** (`template/ha_ready.yaml`, derived
+  from `sensor.uptime` ≥2 min; replaced the hand-rolled `input_boolean.ha_started`
+  + `00_startup_grace.yaml`, retired 2026-10-24).
+- **9 YAML automations active** across `/config/automations/`
   (include_dir_merge_list). State automations also trigger on
-  `input_boolean.ha_started -> on` to reconcile lights/locks after a reboot;
+  `binary_sensor.ha_ready -> on` to reconcile lights/locks after a reboot;
   the outside-light automation re-syncs the daylight flag on `homeassistant
   start` (numeric_state alone only fires on a threshold crossing).
-- **11 automation entities + 9 scripts, 0 unavailable** (2026-10-23): twin
+- **9 automation entities + 8 scripts, 0 unavailable** (2026-10-24): twin
   on/off pairs collapsed 6→3 (`night_lights`, `locks`, `outside_light`); the
   4 orphaned ceiling registry entries + 6 more orphans (old lock/night/outside
   pairs + leftover `set_*` scripts) were purged via WebSocket
@@ -203,25 +207,54 @@ automations + schedule helpers. Migration design + P4 requirements: see
   Replaced by label-driven scripts (`script.taklampa_pa` = taklampa on,
   `script.uteljus_pa` = utelampa on). Scenes cannot render Jinja — keep dynamic
   presets in scripts (`script.nattmode`).
-- **Automations are thin "when" wrappers** (2026-10-23): the actual light/lock
-  behavior lives in **scripts** (behavior boxes) so automations are just
-  trigger→condition→`script.X`:
+- **Automations are thin "when" wrappers** (2026-10-23 → finished 2026-10-24):
+  the actual light/lock behavior lives in **scripts** (behavior boxes) so
+  automations are just trigger→condition→`script.X`. **All** decision logic
+  (`choose`) now lives in scripts — none left in automations:
+  - `script.ceiling_lights_sync` — the 4-branch ceiling role (sleep→`nattmode`;
+    away→`label slack_borta` off; awake+dark→`taklampa` on; awake+bright→off).
+  - `script.uteljus_sync` — resolves `utelampa` from `light_outside` (via
+    `uteljus_pa/av`) **and** `sasong` from `christmas_lights`+`light_outside` in
+    one call; **absorbed the old `script.sasong_sync`** (deleted). Called by both
+    the night-lamps and christmas-toggle automations.
+  - `script.outside_light_sync` — the lux-hysteresis `choose` (flag producer).
   - `script.uteljus_pa/av` — front outdoor (`label.utelampa`) + seasonal
-    (`label.sasong`); the **only** place the `christmas_lights` rule exists.
-    night_lights.yaml is a single `to: [on, off]` trigger + one `choose`.
+    (`label.sasong`); named actions also used by `uteljus_sync`.
   - `script.taklampa_pa` — ceiling lamps (`label.taklampa`) on.
-  - `script.sasong_sync` — resolves `sasong` from `christmas_lights`+`light_outside`
-    (christmas toggle automation calls it).
-  - `script.lock_doors` — locks back+main; used by locks.yaml (single merged
-    `to: [sleep, away]` automation) + `goodnight`.
+  - `script.lock_doors` — locks back+main; used by locks.yaml + `goodnight`.
   - `script.goodnight` — composes `nattmode` + `lock_doors` (voice "god natt").
   - `script.nattmode` — ceiling off (`taklampa`) + night-corner dim (`natthorn`).
-  - `script.light_on_with_transition` — fade a light **or** an area (sovrum/isac).
+  - `script.light_on_with_transition` — fade a light, an area, **or a label**
+    (choose order: area > label > entity). Label targeting added 2026-10-24.
+- **Readiness gate = native `binary_sensor.ha_ready` (2026-10-24)** — the
+  Python-era `input_boolean.ha_started` flag and `00_startup_grace.yaml` are
+  **gone**. Instead: the **`uptime`** config-entry integration (created via
+  config-flow; `sensor.uptime` = boot timestamp) + a trigger-based template
+  binary sensor `binary_sensor.ha_ready` in `template/ha_ready.yaml` (on after
+  ≥2 min, `time_pattern` /1). All automations trigger on `ha_ready -> on` and
+  gate on `ha_ready == on`. Derived ⇒ can't desync / no manual toggling /
+  no restore-state edges. (Fun fact: the pause-timer resume also fired at boot
+  because a fresh timer went `unknown→idle` — a mutable-entity class bug; the
+  derived sensor has zero such surface.)
+- **`slack_borta` away label (2026-10-24)** — new cross-cutting label on all
+  interior lamps/dimmers (incl. bedroom `dimmer_fixed_bedroom_light_2`,
+  taklampa/natthorn are merged, NOT outdoor `utelampa`/seasonal `sasong`).
+  The away branch of `ceiling_lights_sync` targets it → away = all indoor
+  lighting off, outdoor stays on the daylight machine.
+- **`room_schedule` blueprint (2026-10-24)** — `blueprints/automation/room_schedule.yaml`
+  replaces `sovrum.yaml` + `isac_room.yaml`. Instances in
+  `automations/room_schedules.yaml`: `p4_sovrum_schedule` (Mon–Fri + off) and
+  `p4_isac_schedule` (daily, fade-in only). Inputs: area + on/off `input_datetime`
+  entities + `input_number` brightness + weekday list (empty=all). Fade
+  transition shared via `input_number.fade_transition_seconds` (default 1200).
 - **Pause toggles** (2026-10-23): `input_boolean.automatik_taklampor` /
   `automatik_nattlampor` / `automatik_las` gate the ceiling, night and lock
   automations — family can pause a behavior from the dashboard (Automatik card,
-  Belysning view). **Gotcha**: the `automation.trigger` service bypasses
-  conditions — verify gates with a real state change or `test_condition` WS API.
+  Belysning view). **This is the ONLY pause mechanism.** (A timer-based
+  "pause for 1 h" + resume automation was built and then *removed* same day 2026-10-24 —
+  redundant with the toggles and caused a boot-ordering bug; do not re-introduce.)
+  **Gotcha**: the `automation.trigger` service bypasses conditions — verify gates
+  with a real state change or `test_condition` WS API.
 - Dashboard views (2026-10-23): overview, belysning (Automatik card + 9 area
   cards), utomhus (2 areas + Säsongsbelysning = p10/p1), historik, schema.
   Energi view removed (had only the dead `sensor.p4_power`).
@@ -244,11 +277,13 @@ Verified the hard way while testing the collapsed automations:
   2. **WS `test_condition`** — pass the exact `condition` list, get a boolean
      (`{"result": true|false}`); proves the gate flips the outcome without
      firing anything; or
-  3. **`input_boolean.ha_started` off→on** — every state automation triggers on
-     `ha_started -> on` (and gates on its state), so one off→on cycle is a
-     synthetic **boot replay**: re-runs the whole reconcile path (night lamps,
-     ceiling, locks) through real services. Cleanest full-path test, and it
-     needs no separate trigger (ha_started is a real input_boolean).
+3. **`binary_sensor.ha_ready` off→on** — every state automation triggers on
+      `ha_ready -> on` (and gates on its state). `ha_ready` is on once HA has been
+      up ≥2 min (template, derived from `sensor.uptime`). Since it can't be set
+      manually (it's derived, not writable), synthesize a boot replay by
+      reloading the template (`template.reload` resets its state) or by a real
+      core restart — re-runs the whole reconcile path (night lamps, ceiling,
+      locks) through real services.
 - **`homeassistant.set_state` is NOT a service** (`Service homeassistant.set_state
   not found`) — you cannot fake entity states via the API. And **setting a
   `person.*` state does NOT cascade to `group.family`** (groups track
@@ -536,12 +571,15 @@ recreate as HA groups if ever needed.
   Removed from all schedule helpers 2026-10-23; they now restore. Keep documented
   standard values in `tools/summarize.py::DEFAULTS` instead.
 - **Friendly-name registry override**: a UI-set name wins over YAML `name:`
-  (live `input_boolean.ha_started` kept the old "HA startat (1 min)"). Fix with
-  WebSocket `config/entity_registry/update` (`entity_id` + `name`), or the UI —
-  not by editing YAML.
+  (e.g. a YAML template's `name:` isn't applied if a registry override exists —
+  `binary_sensor.ha_ready` shows "HA redo" from the registry, not the YAML name).
+  Fix with WebSocket `config/entity_registry/update` (`entity_id` + `name`), or
+  the UI — not by editing YAML.
 - **Purging stale entities**: when automations are replaced/renamed, the old
-  registry entities stay `unavailable` (e.g. the retired `ha_started_2min`,
-  the 8 old per-button remote automations). Safe automated removal:
+  registry entities stay `unavailable` (e.g. after the 2026-10-24 round: old
+  `p4_sovrum_*`/`p4_isacs_room_morning_fade_in`, `script.sasong_sync`,
+  `pausa_automatik`, `timer.automatik_paus`, `automation.p4_ha_ready`,
+  `input_boolean.ha_started`). Safe automated removal:
   WebSocket `config/entity_registry/remove` per `entity_id` (done 2026-10-23;
   avoids hand-editing `.storage/core.entity_registry`).
   - **WS message `id` must increase every request** — reusing the same `id`

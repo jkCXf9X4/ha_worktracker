@@ -37,6 +37,7 @@ DEFAULTS = {
     "input_number.night_corner_brightness": 56,
     "input_number.outside_light_on_threshold": 400,
     "input_number.outside_light_off_threshold": 150,
+    "input_number.fade_transition_seconds": 1200,
 }
 
 
@@ -222,7 +223,8 @@ def render_schedules(helpers: dict, automations: list[dict]) -> str:
                   "input_datetime.isac_on_time", "input_number.sovrum_brightness",
                   "input_number.isac_brightness", "input_number.night_corner_brightness",
                   "input_number.outside_light_on_threshold",
-                  "input_number.outside_light_off_threshold"]
+                  "input_number.outside_light_off_threshold",
+                  "input_number.fade_transition_seconds"]
     for key in sched_keys:
         h = helpers.get(key)
         if not h:

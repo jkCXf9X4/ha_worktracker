@@ -5,7 +5,7 @@ Forward-looking tracker. Ops how-to lives in the skill
 "where are we, what's next". Completed work lives in `WORKTRACK/archive/changelog.md`.
 
 Snapshot owner: build agent. Update after every working session.
-Last updated: 2026-10-23
+Last updated: 2026-10-24
 
 ## Phase state
 
@@ -37,6 +37,15 @@ candidates (#024–#029, all waiting on owner decision). Full history:
       **Follow-up 2026-10-23:** p6 (Isacs sänglampa) **removed from `sasong`** —
       it was wrongly following the dusk→dawn seasonal rule whenever
       `christmas_lights` was on. Now a manual lamp. `sasong` = p10/p1.
+- [x] **Scripts/templates/helpers simplification (2026-10-24)** — behavior boxes
+      finished (`ceiling_lights_sync`, `uteljus_sync` absorbing `sasong_sync`,
+      `outside_light_sync`); `room_schedule` blueprint instance per room;
+      `home_status` attributes (`is_workday`, `next_wake`, `next_bedtime`);
+      `light_on_with_transition` gained label targeting; `slack_borta` away
+      label; `ha_started` flag retired → native `binary_sensor.ha_ready`
+      (uptime integration); timer-based pause **removed** (owner decision —
+      `automatik_*` dashboard toggles are the single pause mechanism). Full log:
+      `WORKTRACK/archive/changelog.md`. Exporter `66156a5`.
 
 Nothing else is in flight.
 

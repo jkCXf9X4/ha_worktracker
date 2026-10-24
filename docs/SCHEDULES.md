@@ -18,11 +18,9 @@ Automatiskt genererat av `tools/summarize.py` — **ändra aldrig den här filen
 | `input_number.night_corner_brightness` | Night corner dim brightness (siffra) | 56 | `input_number/schedules.yaml` |
 | `input_number.outside_light_on_threshold` | Outside light on above (lux) (siffra) | 400 | `input_number/schedules.yaml` |
 | `input_number.outside_light_off_threshold` | Outside light off below (lux) (siffra) | 150 | `input_number/schedules.yaml` |
+| `input_number.fade_transition_seconds` | Fade transition (seconds) (siffra) | 1200 | `input_number/schedules.yaml` |
 
 ## Tidstyrda automations
 
 | Automation | När | Gör |
 |------------|-----|-----|
-| P4: Isacs room morning fade-in | klockan (input_datetime.isac_on_time) | script.light_on_with_transition |
-| P4: Sovrum morning fade-in | klockan (input_datetime.sovrum_on_time) · vardagar (mån–fre) | script.light_on_with_transition |
-| P4: Sovrum off | klockan (input_datetime.sovrum_off_time) · vardagar (mån–fre) | light.turn_off |

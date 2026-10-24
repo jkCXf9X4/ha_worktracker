@@ -516,3 +516,57 @@ Chronological log of changes and decisions. Newest at the bottom.
   `docs/archive/call_service_tool_P9_PLAN.md` (live refs updated in PLAN.md /
   AGENT_TOOLS.md). Best-practice docs added: `docs/BEST_PRACTICES.md` +
   `docs/deep_dive_home_status.md`.
+
+## 2026-10-24 — scripts/templates/helpers simplification round + native readiness gate
+
+Follow-up to #028/#031/#032/#034 (organized org round). Implemented, verified
+live (Saturday 07:2x, `ha core check` green, exporter `66156a5`):
+
+- **Item 1 — behavior boxes finished:** the last three automations with a
+  `choose` were reduced to thin WHEN wrappers; all decision logic now lives in
+  scripts. Added `script.ceiling_lights_sync` (sleep/away/awake+dark/awake+bright
+  from `home_status`+`light_outside`), `script.uteljus_sync` (absorbs the old
+  `sasong_sync`; resolves utelampa + sasong together), `script.outside_light_sync`
+  (the lux-hysteresis choose). Automations = trigger → gate conditions → one
+  `script.X`. Away branch now targets the new **`slack_borta` label** (all
+  interior lamps) instead of just `taklampa`; membership assigned via WS
+  (labels taklampa/natthorn preserved, merged).
+- **Item 2 — room schedules blueprint:** `blueprints/automation/room_schedule.yaml`
+  with inputs area / on+off `input_datetime` / brightness `input_number` /
+  weekdays (empty=all) / off_enabled. Replaces `sovrum.yaml`+`isac_room.yaml` →
+  two instances in `automations/room_schedules.yaml` (`p4_sovrum_schedule`
+  workdays+off, `p4_isac_schedule` every day fade-in only). Fade transition
+  shared via new `input_number.fade_transition_seconds` (default 1200).
+  Blueprint uses `at: !input off_entity` + weekday template condition; off_branch
+  gated on `off_enabled`.
+- **Item 3 — derived facts on `home_status`:** attributes `is_workday`,
+  `next_wake`, `next_bedtime` added to `template/home_status.yaml`
+  (dashboard #033, one source instead of automations re-deriving the math).
+- **Item 4+5 — knobs + label targeting:** `light_on_with_transition` gained a
+  `label` field (area > label > entity branches) → fades can target labels.
+  (Pause-timer feature added & then **REMOVED** — see readiness bullet.)
+- **`ha_started` flag retired → native readiness gate:** after moving off
+  `script_engine`, the hand-rolled `input_boolean.ha_started` + the
+  `00_startup_grace` automation were the last Python-era leftover. Replaced by
+  the native **`uptime` config-entry integration** (`sensor.uptime` = boot
+  timestamp) + a trigger-based template binary sensor `binary_sensor.ha_ready`
+  (on once up ≥2 min, time_pattern /1). All `ha_started` conditions/triggers →
+  `binary_sensor.ha_ready`. Derived ⇒ can't desync, no manual toggling, no
+  restore-state edge cases. Verified boot-reconcile fires via it (ceiling+lock+
+  night at 05:22:48 UTC after restart, trace `p4_ceiling_lights` etc.).
+- **Timer-based pause REMOVED (owner decision THIS session):** the
+  `timer.automatik_paus` + `script.pausa_automatik` + resume automation I built
+  this session was redundant with the family's dashboard `automatik_*` toggles
+  and had a boot-ordering bug (a freshly restored timer `unknown→idle` fired the
+  `to: idle` resume trigger at boot, forcing `automatik_nattlampor` ON against
+  the family's choice). Reverted fully: entities purged via WS, `timer:` include
+  dropped, `pausa_automatik` removed. `automatik_*` dashboard toggles are the
+  single pause mechanism again.
+- Orphans purged via WS entity_registry.remove: `automation.p4_sovrum_*`,
+  `automation.p4_isacs_room_morning_fade_in`, `script.sasong_sync`,
+  `input_boolean.ha_started`, `script.pausa_automatik`, `timer.automatik_paus`,
+  `automation.p4_ha_ready`, `automation.p4_ateruppta_…`.
+- Live state after all changes: 9 automation entities + 8 scripts, bedroom
+  (`light.dimmer_fixed_bedroom_light_2`) verified OFF throughout (Sara asleep);
+  sovrum only ever touched by the workday-gated schedule — Saturday → inert.
+  `tools/summarize.py` regenerated `docs/AUTOMATIONS.md`/`SCHEDULES.md`.
