@@ -94,6 +94,21 @@ candidates (#024–#029, all waiting on owner decision). Full history:
         rewritten (plain `at: !input off_entity` + block-form options).
       Full log: `WORKTRACK/archive/changelog.md`.
 
+- [x] **Scripts/templates/helpers simplification (2026-10-24, round 2)** — the
+      daylight fact became `binary_sensor.light_outside` (latched-hysteresis
+      template `template/daylight.yaml`) replacing `outside_light.yaml` +
+      `input_boolean.light_outside` + `script.outside_light_sync`; the seasonal
+      `christmas_lights` rule is single-sourced in `script.uteljus_sync`
+      (`uteljus_pa/av` are pure utelampa one-taps now); boot reconcile centralized
+      in `automations/boot_reconcile.yaml` → `script.reconcile_all`
+      (**convention: no `ha_ready -> on` triggers in new automations — extend
+      reconcile_all instead**); registry fixed `script.lock_by_status` +
+      `binary_sensor.light_outside` entity names and purged the 3 deleted
+      entities' orphans; agent handbook/examples rewritten to live state.
+      Live: 9 automations + 12 scripts, reconcile verified on real `ha_ready`
+      boot replay. Full log + exporter commit `d6d7684`:
+      `WORKTRACK/archive/changelog.md`.
+
 Nothing else is in flight.
 
 ## Improvement candidates

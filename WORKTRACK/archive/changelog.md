@@ -670,3 +670,60 @@ live, exporter commits `cd8c26a` (config round) + `f0d9ffe` (backup purge).
 - **GOTCHA:** a backup tar left under `/config/.opencode_backup_20261024/` got
   picked up and committed by the exporter — backups must live OUTSIDE `/config`
   (e.g. `/root`). Purged in `f0d9ffe`.
+
+## 2026-10-24 re: — scripts/templates/helpers simplification round 2 (#036–039, applied)
+
+Owner "patch 1–6": templates absorb the last helper machine, single-source the
+seasonal rule, centralize boot reconcile, and refresh the agent docs. Live
+changes pushed over SSH → `ha core check` green → core restart → exporter
+`d6d7684` (12 files, +306/−292).
+
+- **#036 daylight flag → `binary_sensor.light_outside` template.** New
+  `template/daylight.yaml` is a trigger-based template binary sensor with a
+  **latched-hysteresis** `state` (`this.state`): on above
+  `outside_light_on_threshold`, off below `outside_light_off_threshold` from the
+  input_number helpers (dead zone, no flap). Availability mirrors the ZHA lux
+  sensor. This **deleted** `automations/outside_light.yaml`,
+  `input_boolean.light_outside` and `script.outside_light_sync` — "is it dark"
+  is now a derived fact like `home_status`/`ha_ready`; a template self-settles
+  at boot, so the `ha_ready`-gated boot re-sync is gone too. Consumers
+  (ceiling/night automations + `ceiling_lights_sync`/`uteljus_sync`) retargeted
+  to the binary sensor.
+  - **GOTCHA (bit us on the first boot check):** a template sensor's entity_id
+    comes from its NAME, not the `unique_id`/key — the sensor registered as
+    `binary_sensor.light_outside_daylight_flag` from name "…(daylight flag)",
+    so every `binary_sensor.light_outside` reference silently no-op'd. Fixed
+    with a registry rename (`binary_sensor.light_outside_daylight_flag` →
+    `binary_sensor.light_outside`), same as `binary_sensor.ha_ready` was.
+  - Lovelace: live dashboard `.storage` updated via `lovelace/config/save`
+    (2 cards: Hemstatus + Uteljus history-graph), mirror re-derived by exporter.
+- **#037 seasonal rule single-sourced in `script.uteljus_sync`.** The
+  `christmas_lights` branch was encoded twice (in `uteljus_pa/av` AND in
+  `uteljus_sync`). `uteljus_pa/av` are now pure `label.utelampa` one-taps (do
+  NOT touch `sasong`); `uteljus_sync` remains the single home of the seasonal
+  rule for automations + voice presets. Behaviour note: "tänd uteljus" no longer
+  flips the Christmas string — that's now only the daylight machine's job.
+- **#038 boot reconcile centralized.** New `automations/boot_reconcile.yaml`
+  (`binary_sensor.ha_ready -> on` → `script.reconcile_all`, which replays
+  `uteljus_sync` → `ceiling_lights_sync` → `lock_by_status`) replaces the
+  duplicated `ha_ready -> on` trigger that sat in every behavior automation
+  (ceiling/night/locks). **Convention: do NOT add `ha_ready -> on` triggers to
+  new automation files — extend `script.reconcile_all`.** The daylight template
+  needs no boot resync.
+- **#039 registry fixes discovered during verification:**
+  - `script.lock_by_status` had registered under `script.las_vid_hemmastatus_gate`
+    (YAML key vs alias-slug drift) — automations calling `script.lock_by_status`
+    would have failed at runtime. Registry-renamed back to `script.lock_by_status`.
+  - Purged orphans: `automation.p4_outside_daylight_flag`, `script.outside_light_sync`,
+    `input_boolean.light_outside` (WS `config/entity_registry/remove`).
+- **Agent docs refreshed (`/config/docs/`):** `AGENT_HANDBOOK.md` + `AGENT_EXAMPLES.md`
+  rewritten to live state — 9 automations / 12 scripts / templates incl. the
+  daylight template, the 10 config_tools (v0.4.0: write allows `input_*/*.yaml` +
+  `set_label` + `restart_core`), behavior-box + blueprint copy-block recipes
+  (new room / new remote), and the "scripts surface as `script.*` tools — prefer
+  them over raw `call_service`" convention. (System-prompt "TEKNISK DEL" still
+  needs a reconfigure-flow refresh to mention the v0.4.0 tools — optional.)
+- Verified live after restart + `ha_ready` boot replay: utelampa/p11 on (dark),
+  sasong off (christmas off), all 5 taklampa on (awake+dark), locks unchanged;
+  `binary_sensor.light_outside` renders from lux (72 → off); no errors in
+  `home-assistant.log`. Pre-change backups in `/tmp/opencode/hz_prepatch/`.

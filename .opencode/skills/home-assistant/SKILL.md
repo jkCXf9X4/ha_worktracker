@@ -179,13 +179,21 @@ automations + schedule helpers. Migration design + P4 requirements: see
   State/attribute logic uses **lexicographic compare of zero-padded `HH:MM:SS`
   strings** (clock order == string order), not timestamp math (#024, verified
   equivalent offline).
-- Locks on sleep/away (`automations/locks.yaml`); outside-light lux hysteresis
-  (400 on / 150 off, **read live from the input_number helpers**
-  `outside_light_on/off_threshold` via `above:`/`below:` entity refs)
-  (`outside_light.yaml`); ceiling + night lamps — **since 2026-10-23 the four
+- Locks on sleep/away (`automations/locks.yaml`); the outside daylight fact is
+  **`binary_sensor.light_outside` — a trigger-based template binary sensor**
+  (`template/daylight.yaml`, since 2026-10-24) with a **latched-hysteresis**
+  `state` via `this.state` (on above `outside_light_on_threshold`, off below
+  `outside_light_off_threshold`; dead zone 150–400 lux by default, no flap).
+  This **replaced** `automations/outside_light.yaml` + `input_boolean.light_outside`
+  + `script.outside_light_sync` — a template self-settles at boot from the
+  current lux, so no boot re-sync exists and there is no mutable state to
+  restore. Availability mirrors the ZHA lux sensor (unavailable ⇒ consumers
+  no-op). Threshold/on/off edges still fire the night/ceiling automations via
+  state triggers on the binary sensor. Ceiling + night lamps — **since
+  2026-10-23 the four
   ceiling automations are ONE data-driven automation**
   (`p4_ceiling_lights_follow_home_status_daylight`: state trigger on
-  `home_status`+`light_outside`; the 4-way `choose` now lives in
+  `home_status`+`binary_sensor.light_outside`; the 4-way `choose` now lives in
   `script.ceiling_lights_sync`, action targets `label.taklampa` /
   `label.slack_borta`, sleep branch runs `script.nattmode`) plus
   `night_lights.yaml` (both automations call `script.uteljus_sync`);
@@ -195,21 +203,24 @@ automations + schedule helpers. Migration design + P4 requirements: see
   readiness gate **`binary_sensor.ha_ready`** (`template/ha_ready.yaml`, derived
   from `sensor.uptime` ≥2 min; replaced the hand-rolled `input_boolean.ha_started`
   + `00_startup_grace.yaml`, retired 2026-10-24).
-- **9 YAML automations active** across `/config/automations/`
-  (include_dir_merge_list). State automations also trigger on
-  `binary_sensor.ha_ready -> on` to reconcile lights/locks after a reboot;
-  **since 2026-10-24 the outside-light automation also re-syncs on
-  `ha_ready -> on`** — the previous `homeassistant start` event fired before the
-  ZHA lux sensor was up (a `numeric_state` on `unknown` no-ops), leaving the
-  restored `light_outside` stale for hours (numeric_state alone still only fires
-  on a threshold crossing).
-- **9 automation entities + 12 scripts, 0 unavailable** (2026-10-24): twin
-  on/off pairs collapsed 6→3 (`night_lights`, `locks`, `outside_light`); the
-  4 orphaned ceiling registry entries + 6 more orphans (old lock/night/outside
-  pairs + leftover `set_*` scripts) were purged via WebSocket
-  `config/entity_registry/remove`; the gate round added `lock_by_status`
-  (`script.las_vid_hemmastatus_gate`). Reloaded/verified: all 9 automations
-  `on`, all 12 scripts loaded.
+- **9 automation entities from 7 YAML files** across `/config/automations/`
+  (include_dir_merge_list): boot_reconcile, ceiling_lights, night_lights
+  (incl. the christmas-sockets sync), locks, room_schedules, hue_dimmer_isacs,
+  styrbar_lekstuga. **Boot reconciliation is ONE automation**
+  (`automations/boot_reconcile.yaml`): `binary_sensor.ha_ready -> on` →
+  `script.reconcile_all` (replays uteljus_sync → ceiling_lights_sync →
+  lock_by_status; each child is self-gated so paused behaviours are skipped).
+  **Do NOT add `ha_ready -> on` triggers to new automation files** — extend
+  `script.reconcile_all` instead. The daylight flag is a template and needs no
+  boot re-sync.
+- **9 automation entities + 12 scripts, 0 unavailable** (2026-10-24 late):
+  registry renames `binary_sensor.light_outside_daylight_flag` →
+  `binary_sensor.light_outside` and `script.las_vid_hemmastatus_gate` →
+  `script.lock_by_status`; purged the `input_boolean.light_outside`,
+  `automation.p4_outside_daylight_flag` and `script.outside_light_sync` orphans.
+  **GOTCHA:** a template sensor's entity_id follows its NAME (not the
+  key/`unique_id`) — rename in the entity registry, exactly as was done for
+  `binary_sensor.ha_ready`.
 - **Scenes removed 2026-10-23** — `scenes.yaml` deleted: the 2 static scenes
   duplicated the taklampa/utelampa labels 1:1 and scenes can't target labels.
   Replaced by label-driven scripts (`script.taklampa_pa` = taklampa on,
@@ -221,25 +232,27 @@ automations + schedule helpers. Migration design + P4 requirements: see
   gates were folded INTO the behavior-box scripts as a leading `if:`/`then:`
   wrapper (see the gotcha below — scripts have *no* top-level `condition` key).
   `ceiling_lights_sync`/`uteljus_sync` gate on their `automatik_*` toggle +
-  `ha_ready`; `outside_light_sync` on `ha_ready`; `lock_by_status` (new wrapper)
-  gates `automatik_las` + `ha_ready` + `home_status sleep/away` and calls the
-  ungated `lock_doors` (so `goodnight` always locks). The `ha_ready -> on`
-  trigger stays in every automation file for boot-reconcile.
+  `ha_ready`; `lock_by_status` gates `automatik_las` + `ha_ready` +
+  `home_status sleep/away` and calls the ungated `lock_doors` (so `goodnight`
+  always locks). Boot reconcile is centralized (see above).
   Decision logic (`choose`) lives in scripts — none left in automations:
   - `script.ceiling_lights_sync` — the 4-branch ceiling role (sleep→`nattmode`;
     away→`label slack_borta` off; awake+dark→`taklampa` on; awake+bright→off).
-  - `script.uteljus_sync` — resolves `utelampa` from `light_outside` (via
-    `uteljus_pa/av`) **and** `sasong` from `christmas_lights`+`light_outside` in
-    one call; **absorbed the old `script.sasong_sync`** (deleted). Called by both
-    the night-lamps and christmas-toggle automations.
-  - `script.outside_light_sync` — the lux-hysteresis `choose` (flag producer).
-  - `script.uteljus_pa/av` — front outdoor (`label.utelampa`) + seasonal
-    (`label.sasong`); named actions also used by `uteljus_sync`.
+  - `script.uteljus_sync` — resolves `utelampa` from
+    `binary_sensor.light_outside` (via `uteljus_pa/av`) **and** `sasong` from
+    `christmas_lights`+`light_outside` in one call; **the single owner of the
+    seasonal rule** (absorbed the old `script.sasong_sync`). Called by the
+    night-lamps + christmas-toggle automations and `reconcile_all`.
+  - `script.uteljus_pa/av` — front outdoor (`label.utelampa`) one-taps ONLY
+    (since 2026-10-24 they do NOT touch `sasong`; the seasonal rule moved
+    entirely into `uteljus_sync`). Named actions also used by `uteljus_sync`.
+  - `script.reconcile_all` — boot replay of uteljus_sync → ceiling_lights_sync →
+    lock_by_status (called by the single boot_reconcile automation).
   - `script.taklampa_pa` — ceiling lamps (`label.taklampa`) on.
   - `script.lock_doors` — locks back+main; UNGATED (used by goodnight).
   - `script.lock_by_status` — gated wrapper (automatik_las + ha_ready +
-    home_status sleep/away) → `lock_doors`; the locks automation calls THIS.
-    Its script entity slug is `script.las_vid_hemmastatus_gate`.
+    home_status sleep/away) → `lock_doors`; the locks automation and
+    `reconcile_all` call THIS. Entity is `script.lock_by_status`.
   - `script.goodnight` — composes `nattmode` + `lock_doors` (voice "god natt").
   - `script.nattmode` — ceiling off (`taklampa`) + night-corner dim (`natthorn`).
   - `script.light_on_with_transition` — fade a light, an area, **or a label**
@@ -312,8 +325,12 @@ Verified the hard way while testing the collapsed automations:
   with no condition step while the gate was OFF) and updates `last_triggered`
   every time — a gate test via `automation/trigger` produces a false "it ran"
   result. Honest tests:
-  1. **Real state change** — e.g. flip `input_boolean.light_outside` on/off to
-     exercise the night automation's real trigger + `choose`; or
+  1. **Real state change** — `binary_sensor.light_outside` is a template, so
+     you can't set it by hand; force a flip instead by moving the
+     `outside_light_on_threshold`/`outside_light_off_threshold` helpers across
+     the current lux (or toggle `input_boolean.christmas_lights` to exercise the
+     sasong path). These exercise the night automation's real trigger +
+     `choose`; or
   2. **WS `test_condition`** — pass the exact `condition` list, get a boolean
      (`{"result": true|false}`); proves the gate flips the outcome without
      firing anything; or
