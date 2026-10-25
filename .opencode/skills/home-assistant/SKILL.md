@@ -75,6 +75,15 @@ config at `/config/docs/`.
   conflicts; they are **NOT** applied to `/config`. A commit pushed straight to
   the GitHub repo was silently reverted on the next export. **All config edits
   must go on the VM** (`/config/...` over SSH), then the exporter versions them.
+  - **False-positive IP/MAC allow-list (verified 2026-10-25):** the exporter's
+    secret check is `git-secrets` (awslabs, v1.3.0); `check.check_for_ips`
+    blocks any IPv4/MAC. A **repo-root `.gitallowed`** (in `ha_config`) is the
+    documented escape — it is read from `$(git rev-parse --show-toplevel)/`
+    and each non-blank, non-`#` line is an allowed regex (comment with `#`).
+    It survives because it lives outside `config/` and is fetched by
+    `pull_before_push` before the scan. Scope the regex to the file, not the
+    rule (e.g. `custom_components/pyscript/services\.yaml` for a loopback
+    default). Do NOT set `check_for_ips: false` globally.
 - Config change loop:
   1. edit files under `/config` over SSH,
   2. `ha core check`,
@@ -743,6 +752,32 @@ recreate as HA groups if ever needed.
   `automatik_las` only loaded after restart). The chat agent can do the whole
   loop itself with `config_tools__write_file` (input_* is now writable) +
   `config_tools__restart_core`.
+
+## Tested-policy architecture (Phase A+ — active from 2026-10-25)
+
+Plan: `docs/TESTED_POLICY_PLAN.md`; per-subsystem contract:
+`docs/subsystems/daylight.md`; binding decisions: `docs/invariants.md`.
+
+- **Quality gate (run before ANY deploy of managed logic):** `tools/qa.sh`
+  (from repo root) — ruff + mypy + pytest + `summarize.py` consistency. Zero HA
+  access needed; must exit 0. Fast form: `tools/qa.sh fast` (skips summarize).
+- **Domain package** `domain/daylight/` = pure Python policy (no HA imports,
+  no entity IDs), typed via `models.py`. Unit tests + YAML fixture matrices in
+  `tests/`. The fixture matrix (`tests/fixtures/daylight/night_lights.yaml`) is
+  the contract the deployed YAML/pyscript adapter must satisfy.
+- **Repo = source of truth for managed logic; VM `/config` = source of truth
+  for config state.** This preserves the push-only exporter. `mirror == build`
+  and `mirror == VM` md5 checks fail on drift.
+- **Binding invariant (owner):** never trigger any light on in `isacs_rum`
+  (`light.isac_tak`, `switch.isac_lekstuga`, bedside) — Isac is asleep. All
+  probes/spikes/deploys respect this; the sovrum/isac fades stay pure YAML.
+- **Config-method gotcha (Pyscript, verified 2026-10-20 + docs 2026-10-25):**
+  do NOT mix a `pyscript:` YAML block with a UI config-flow entry — Pyscript
+  ignores the three settings from YAML when added via the UI flow; pick one
+  method. If the 2.0+ decorator subsystem misbehaves, `legacy_decorators: true`
+  is the documented fallback (needs a restart). Debug logger path is
+  `custom_components.pyscript.apps.*: debug` (2.x), not just the parent.
+  Pyscript 2.1.0 supports HA 2026.5+ (we run 2026.10.2).
 
 ## How to grow this skill
 

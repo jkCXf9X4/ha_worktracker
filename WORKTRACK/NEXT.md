@@ -5,7 +5,7 @@ Forward-looking tracker. Ops how-to lives in the skill
 "where are we, what's next". Completed work lives in `WORKTRACK/archive/changelog.md`.
 
 Snapshot owner: build agent. Update after every working session.
-Last updated: 2026-10-24
+Last updated: 2026-10-25
 
 ## Phase state
 
@@ -31,11 +31,49 @@ v0.4.0), no blockers. Full delivery record:
 
 ## Open work
 
-Only genuinely open items live here (per the tracker convention, completed
-items stay in the changelog). **None.** The last owner-verification item (#027)
-resolved 2026-10-24: the deployed `home_status` string-compare matches the
-intended weekday/weekend axes (Sunday morning = weekend wake; Sunday evening =
-weekday bedtime — "morning after is early"). No regression observed.
+The last owner-verification item (#027) resolved 2026-10-24: the deployed
+`home_status` string-compare matches the intended weekday/weekend axes (Sunday
+morning = weekend wake; Sunday evening = weekday bedtime — "morning after is
+early"). No regression observed.
+
+**⬜ Next block — Tested-policy architecture (planned 2026-10-25).** Design
+record: `docs/TESTED_POLICY_PLAN.md`. Evolution of the YAML stack into a
+three-layer, testable, LLM-maintainable Python shape — domain package
+(pure, pytest-tested) + adapter binding + existing infra. Decoupled quality
+infra lands first regardless of runtime; a bounded Pyscript spike gates the
+execution layer (Path E = native domain modules + thin pyscript adapters;
+Path V = golden/Jinja-parity verification against live YAML).
+
+- ✅ P-A: quality skeleton — `uv`/`pyproject.toml` + `uv.lock`; ruff (managed
+  code only) + mypy (strict) + pytest gate; `domain/daylight/{models,
+  home_status,daylight,night}` extracted + typed; 29 unit tests + YAML fixture
+  matrix (`tests/fixtures/daylight/night_lights.yaml`); `tools/qa.sh` green;
+  `docs/subsystems/daylight.md` + `docs/invariants.md`; skill dev-chain section
+- ✅ P-A+: **Pyscript spike = GO (2026-10-25, 21:4x).** pyscript 2.1.0 installed
+  as manual custom_component + config-entry via **UI flow only** (source `user`,
+  `allow_all_imports: false`), *no* `pyscript:` block — the Oct-20 root-cause
+  fix. Verified live over WS: module load, `@time_trigger("startup")` fires
+  (probe sensors), watchdog auto-reloads new files without restart,
+  `pyscript.reload` works, `generate_stubs` produced IDE stubs (with
+  `?return_response`), debug logs at `custom_components.pyscript.*` show full
+  traces. Probes removed after verification (inert). Export blocked once by the
+  add-on's IP check on pyscript's `services.yaml` loopback default → repo-root
+  `.gitallowed` (`ha_config`) unblocked it; exporter pushed `7d694a1`.
+  **Decision: Path E.** Bound invariants (isacs_rum, honest-testing) active.
+- ✅ P-B: domain extraction parity + fixture matrices — `home_status.yaml`
+  (13 cases: axes, away, boundaries, custom schedule) + `daylight.yaml`
+  (12 cases: hysteresis dead-zone, threshold edges, unavailable lux) + uniform
+  `{defaults, cases}` matrix loader; **caught + fixed a real parity bug**:
+  `next_wake`/`next_bedtime` re-derive the *next day's* weekday axis when
+  today's boundary has passed (mirrors `template/home_status.yaml`); 53 tests
+  green
+- ⬜ P-C: binding layer — Path E adapters or Path V parity harness
+- ⬜ P-D: `tools/deploy.py` + `tools/probe_vm.py` + rollback ritual
+- ⬜ P-E: §7 agent workflow in skill + invariants doc + success-test
+
+**Binding invariant (all workstreams, from owner):** never trigger any light
+on in `isacs_rum` (`light.isac_tak`, `switch.isac_lekstuga`, bedside) — Isac is
+asleep. Pilot cluster excludes the sovrum/isac fades (stay pure YAML).
 
 ## Recently completed (working-log shorthand; detail in the changelog)
 

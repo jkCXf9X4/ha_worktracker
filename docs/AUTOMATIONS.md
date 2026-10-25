@@ -4,6 +4,7 @@ Automatiskt genererat av `tools/summarize.py` — **ändra aldrig den här filen
 
 | Automation | När | Utför | Källa |
 |------------|-----|-------|-------|
+| Gästrum: plugg följer dim | light.gastrum_tak ändras · light.gastrum_tak → off | script.plug_follow_room_dim | `automations/plug_dim.yaml` |
 | Hue dimmer Isacs | — | — | `automations/hue_dimmer_isacs.yaml` |
 | P4: Ceiling lights follow home status / daylight | ['sensor.home_status', 'binary_sensor.light_outside'] → ['awake', 'sleep', 'away', 'on', 'off'] | script.ceiling_lights_sync | `automations/ceiling_lights.yaml` |
 | P4: Christmas sockets follow helper | input_boolean.christmas_lights ändras | script.uteljus_sync | `automations/night_lights.yaml` |

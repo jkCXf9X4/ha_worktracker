@@ -1,0 +1,35 @@
+# Night/seasonal rule decision matrix (domain.daylight.night).
+# Each entry: inputs -> expected actions. Adapters map HA state onto these
+# inputs; the fixture records the *policy contract* that parity checks (Path V)
+# or live probes (Path E) must also satisfy. Entity IDs never live here.
+#
+# pause / readiness gates NOOP the whole rule regardless of other inputs.
+defaults: {}
+cases:
+  - name: dark_no_christmas
+    inputs: {light_outside: false, christmas_lights: false, paused: false, ha_ready: true}
+    expect: {"utelampa": "on", "sasong": "off"}
+
+  - name: bright_no_christmas
+    inputs: {light_outside: true, christmas_lights: false, paused: false, ha_ready: true}
+    expect: {"utelampa": "off", "sasong": "off"}
+
+  - name: dark_with_christmas
+    inputs: {light_outside: false, christmas_lights: true, paused: false, ha_ready: true}
+    expect: {"utelampa": "on", "sasong": "on"}
+
+  - name: bright_with_christmas
+    inputs: {light_outside: true, christmas_lights: true, paused: false, ha_ready: true}
+    expect: {"utelampa": "off", "sasong": "off"}
+
+  - name: paused_dark_christmas
+    inputs: {light_outside: false, christmas_lights: true, paused: true, ha_ready: true}
+    expect: {"utelampa": "noop", "sasong": "noop"}
+
+  - name: not_ready_dark_christmas
+    inputs: {light_outside: false, christmas_lights: true, paused: false, ha_ready: false}
+    expect: {"utelampa": "noop", "sasong": "noop"}
+
+  - name: paused_bright
+    inputs: {light_outside: true, christmas_lights: false, paused: true, ha_ready: true}
+    expect: {"utelampa": "noop", "sasong": "noop"}

@@ -1,0 +1,44 @@
+[project]
+name = "ha-domain"
+version = "0.1.0"
+description = "Tested-policy domain layer for the rosenlund Home Assistant automation stack. Pure Python, framework-independent (no Home Assistant imports)."
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pyyaml>=6.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["domain", "tests"]
+exclude = [
+    "ha_config/**",
+    ".opencode/**",
+    ".git/**",
+    "tools/**",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["domain"]
+exclude = ["tests/parity/"]
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.pyright]
+pythonVersion = "3.11"
+include = ["domain", "tests", "tools"]

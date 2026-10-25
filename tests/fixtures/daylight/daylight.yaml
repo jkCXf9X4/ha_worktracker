@@ -1,0 +1,54 @@
+# Daylight-flag hysteresis matrix (domain.daylight.daylight).
+# Latched threshold: an ON flag turns OFF only when lux drops strictly below
+# the (lower) off-threshold; an OFF flag turns ON only when lux strictly
+# exceeds the (higher) on-threshold. The dead zone between them holds state.
+defaults:
+  inputs: {on_threshold: 400, off_threshold: 150}
+cases:
+  - name: off_below_on_stays_off
+    inputs: {lux: 100, currently_on: false}
+    expect: false
+
+  - name: off_at_on_threshold_not_on
+    inputs: {lux: 400, currently_on: false}
+    expect: false
+
+  - name: off_just_above_on_turns_on
+    inputs: {lux: 401, currently_on: false}
+    expect: true
+
+  - name: on_above_off_stays_on
+    inputs: {lux: 151, currently_on: true}
+    expect: true
+
+  - name: on_at_off_threshold_turns_off
+    inputs: {lux: 150, currently_on: true}
+    expect: false
+
+  - name: on_below_off_turns_off
+    inputs: {lux: 100, currently_on: true}
+    expect: false
+
+  - name: dead_zone_holds_on
+    inputs: {lux: 300, currently_on: true}
+    expect: true
+
+  - name: dead_zone_holds_off
+    inputs: {lux: 300, currently_on: false}
+    expect: false
+
+  - name: unavailable_lux_maps_zero_off
+    inputs: {lux: 0, currently_on: false}
+    expect: false
+
+  - name: unavailable_lux_maps_zero_on_turns_off
+    inputs: {lux: 0, currently_on: true}
+    expect: false
+
+  - name: custom_thresholds_off_below_on
+    inputs: {lux: 10, on_threshold: 20, off_threshold: 5, currently_on: false}
+    expect: false
+
+  - name: custom_thresholds_on_above_off
+    inputs: {lux: 10, on_threshold: 20, off_threshold: 5, currently_on: true}
+    expect: true

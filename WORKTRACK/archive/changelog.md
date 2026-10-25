@@ -923,3 +923,94 @@ with HA… don't make the dimmer affect the plug in the living room."
   does nothing). Core log clean, ZHA device available, HA state stable during
   persistent blinking → the driver/bulb itself is failing. Not config; family
   to reseat/replace. Skill §Room dimming + §Plugs-follow updated.
+
+## 2026-10-25 — Planned: tested-policy architecture (three-layer directions doc)
+
+- **Owner decision**: evolve the YAML automation stack toward a modular,
+  testable, LLM-maintainable Python shape. Decoupled quality infra
+  (pytest/ruff/mypy + `domain/` package + fixtures) lands first, independent
+  of the execution layer; a **bounded Pyscript spike** gates the rest.
+- Re-opened the Pyscript evaluation (shelved 2026-10-20): verified current
+  **2.1.0** supports HA 2026.5+ (we run 2026.10.2); the Oct-20 silent-failure
+  was likely config-method mixing (YAML + UI flow) and/or the 2.0.0 decorator
+  manager (documented `legacy_decorators: true` fallback never attempted).
+  Pyscript's `modules/` package layout + native-module `sys.path` import path
+  map 1:1 onto the brief's domain/adapter split and allow *tested == deployed*
+  (Path E). Full design: **`docs/TESTED_POLICY_PLAN.md`**.
+- **Binding invariant (owner):** never trigger any light on in `isacs_rum`
+  (`light.isac_tak`, `switch.isac_lekstuga`, bedside) — Isac is asleep. Applies
+  to all probes/spikes/pilot work.
+- Docs + tracker updated; no live-config change. Next: Phase A quality
+  skeleton, then Phase A+ Pyscript spike.
+
+## 2026-10-25 — Phase A done: tested-policy quality skeleton
+
+- **First delivered slice of the tested-policy architecture** (plan:
+  `docs/TESTED_POLICY_PLAN.md`). All decoupled from the (as-yet undecided)
+  execution layer — Path E (pyscript native) vs Path V (verify against live
+  YAML) both build on this.
+- **Tooling**: `pyproject.toml` via `uv` (`uv.lock`); dev deps pytest/ruff/mypy/
+  pyyaml; ruff scoped to managed code (`domain`, `tests`; `tools/summarize.py`
+  deliberately excluded as a legacy live script); mypy strict on `domain`.
+- **Domain package** `domain/daylight/`: `models.py` (typed explicit
+  input/output dataclasses + `FamilySchedule`), `home_status.py` (awake/sleep/
+  away machine + `is_workday`/`next_wake`/`next_bedtime` — exact translation of
+  `template/home_status.yaml`, incl. the #027 Sunday-axis decision),
+  `daylight.py` (latched-lux hysteresis of `template/daylight.yaml`),
+  `night.py` (`script.uteljus_sync` decision table, owner of the seasonal rule,
+  NOOP on pause/`ha_ready` off). No HA imports, no entity IDs in policy.
+- **Tests**: 29 unit tests (4 test files) + YAML **fixture matrix**
+  `tests/fixtures/daylight/night_lights.yaml` as the policy contract. Caught a
+  YAML 1.1 gotcha on the way (unquoted `on`/`off` → booleans — quoted now).
+- **Gate**: `tools/qa.sh` — ruff + mypy + pytest + `summarize.py` consistency,
+  all green, zero HA access. Skill dev-chain + config-method-gotcha section
+  added; `docs/invariants.md` (7 invariants incl. the isacs_rum rule);
+  `docs/subsystems/daylight.md` (explicit-interface record).
+- No live-config change; VM untouched. Next: **Phase A+** bounded Pyscript
+  spike (go/no-go gate for Path E) — the isacs_rum invariant applies.
+
+## 2026-10-25 — Phase A+ Pyscript spike: GO (Path E chosen)
+
+- **Spike goal:** determine, with evidence, whether pyscript can run on HA
+  2026.10.2 — the Oct-20 "silent watchdog" failure made this a go/no-go for the
+  execution layer. Result: **GO, Path E.**
+- **Root cause (confirmed by fix):** Oct-20 mixed a `pyscript:` YAML block with
+  a config-flow entry; pyscript's docs forbid mixing ("your initial choice
+  determines how you update settings later"). This time: installed pyscript
+  2.1.0 into `/config/custom_components/pyscript`
+  (manual install, md5-baselined first), added the integration **via the config
+  flow only** (`source: user`, `allow_all_imports: false`, no YAML block),
+  core restart.
+- **Verified live** (WS + logs): probe script module-load log; `sensor.
+  pyscript_probe` = `loaded` (set *inside* `@time_trigger("startup")` → proves
+  the trigger fired); watchdog auto-loaded a second probe file with no restart;
+  `pyscript.reload` re-ran both; `pyscript.generate_stubs` (needs `?return_
+  response`) wrote `modules/stubs/{pyscript_builtins,pyscript_generated}.py`;
+  debug logging at `custom_components.pyscript.*` produced full eval/trace logs.
+  Probes deleted afterwards → pyscript parked inert.
+- **Exporter hiccup:** the add-on's `git-secrets` IP check flagged pyscript's
+  `services.yaml` loopback default (`example/default: 127.0.0.1`). Fixed via the
+  documented permalink — repo-root `.gitallowed` allow file in `ha_config`
+  (pattern scoped to that file, not the rule) → exporter pushed `7d694a1`
+  (pyscript component + stubs). `.gitallowed` survives because it lives outside
+  `config/` and pull_before_push fetches it into the working tree pre-scan.
+- Doc note (skill): `check_for_ips` is git-secrets; allow a false positive via
+  `.gitallowed` at repo root (non-comment, non-blank regex lines matched against
+  the scan target). Do not weaken `check.check_for_ips` globally.
+- **Next:** Phase B — parity fixtures for `home_status` + `daylight` (the night
+  matrix exists), then Phase C Path E adapters. Isacs_rum invariant active.
+
+## 2026-10-25 — Phase B done: home_status + daylight fixture matrices
+
+- Uniform fixture-matrix format `{defaults, cases}` in
+  `tests/fixtures/daylight/{night_lights,home_status,daylight}.yaml`; loader
+  merges defaults into inputs/schedule. `home_status.yaml` (13 cases: weekday/
+  weekend axes, away, inclusive boundaries, custom schedule),
+  `daylight.yaml` (12 cases: dead-zone holds, strict threshold edges,
+  unavailable lux → 0).
+- **Caught a real parity bug.** The fixture matrix proved the domain
+  `next_wake`/`next_bedtime` disagreed with the deployed template: when
+  today's boundary had already passed the template re-derives the *next day's*
+  weekday axis (e.g. Sat after bed → Sun **weekday** 21:00, not weekend 21:30).
+  Fixed `domain/daylight/home_status.py::_next_boundary` to mirror that exactly.
+  53 tests green; qa.sh green.
