@@ -242,12 +242,15 @@ live-template output. Bounded, cross-checked duplication. For script-only rules
 ### Phase E — Agent workflow + evaluation gate
 
 - Encode the brief's §7 discipline into `SKILL.md` + `docs/invariants.md`
-  (incl. the binding `isacs_rum` invariant, §8).
-- **Success test:** change the off-hysteresis threshold in `daylight.py` →
-  `qa.sh` + fixtures force the matrix update → `deploy.py` → probe green →
-  rollback tested. Demonstrates: localized change, independent domain
-  validation, adapter integration, safe deploy/rollback with no collateral
-  behavior change.
+  (incl. the binding `isacs_rum` invariant, §8). **DONE 2026-10-25:** skill
+  "§7 agent workflow" + "Managed-logic deploy path" + "Pyscript gotchas"
+  sections; invariants doc enumerates the rules.
+- **Success test (the acceptance demo, run when Phase D (ownership flip) is
+  ready):** change the off-hysteresis threshold in `daylight.py` → `qa.sh` +
+  fixtures force the matrix update → `deploy.py` → probe green → rollback
+  tested. Demonstrates: localized change, independent domain validation,
+  adapter integration, safe deploy/rollback with no collateral behavior
+  change.
 
 ---
 

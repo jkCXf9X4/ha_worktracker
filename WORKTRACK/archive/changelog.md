@@ -1040,3 +1040,17 @@ with HA… don't make the dimmer affect the plug in the living room."
 - **Tooling:** `tools/deploy.py` — qa.sh gate → isacs_rum AST-code guard
   (docstrings excluded) → tar-over-SSH → local REST `pyscript.reload`.
 - Diag/probe files removed from VM. Exporter to pick up `/config/pyscript/`.
+
+## 2026-10-25 — Phase E done: agent workflow + evaluation gate
+
+- The brief's §7 change discipline is now encoded as binding instructions in
+  the skill (`.opencode/skills/home-assistant/SKILL.md`): the agent reads the
+  subsystem doc + fixtures first, states intended behavior/interfaces, checks
+  ownership, makes the smallest change, updates fixtures/tests/docs together
+  with the change, runs `tools/qa.sh` before any deploy, reviews the diff for
+  regressions/safety, and reports.
+- Plan doc §10 success-test marked as the Phase D acceptance demo (change the
+  off-hysteresis threshold → fixtures force the update → deploy → probe →
+  rollback).
+- Exporter synced the live pyscript adapters + native domain (`7d694a1..
+  ca350c8`); mirror == VM. QA green (53 tests). No light touched anywhere.

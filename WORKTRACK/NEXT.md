@@ -71,7 +71,9 @@ Path V = golden/Jinja-parity verification against live YAML).
   tar-over-SSH → pyscript.reload).
 - ⬜ P-D: ownership flip (`_ps` → real IDs), `tools/probe_vm.py`, rollback
   ritual, exporter sync of `/config/pyscript/`
-- ⬜ P-E: §7 agent workflow in skill + invariants doc + success-test
+- ✅ P-E: §7 agent workflow + deploy-path + pyscript-gotchas encoded into the
+  skill; plan doc marks the §10 success-test as the Phase D acceptance demo.
+  (Run the success test when D lands.)
 
 **Binding invariant (all workstreams, from owner):** never trigger any light
 on in `isacs_rum` (`light.isac_tak`, `switch.isac_lekstuga`, bedside) — Isac is

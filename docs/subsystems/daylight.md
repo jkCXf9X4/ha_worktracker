@@ -1,10 +1,16 @@
 # Subsystem: daylight & home status (pilot cluster)
 
-**Owner:** build agent (this repo). **Status:** Phase A skeleton, 2026-10-25.
+**Owner:** build agent (this repo). **Status:** Phase A+B+C done, 2026-10-25.
 
 This is the explicit-interface record for the first migrated cluster. It
 documents the *intended* contract; the live YAML on the VM is verified against
 it (Path V parity / Path E probes).
+
+**Execution state (Path E, shadow):** `domain/daylight` runs natively on the VM
+at `/config/pyscript/native_domain/domain/daylight/`; thin pyscript adapters in
+`/config/pyscript/scripts/` write `_ps` twin entities and log mismatches —
+they do NOT call services. Ownership flip to `sensor.home_status` /
+`binary_sensor.light_outside` is Phase D.
 
 ## Purpose and responsibilities
 

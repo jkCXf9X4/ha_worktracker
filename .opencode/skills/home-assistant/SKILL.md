@@ -758,6 +758,54 @@ recreate as HA groups if ever needed.
 Plan: `docs/TESTED_POLICY_PLAN.md`; per-subsystem contract:
 `docs/subsystems/daylight.md`; binding decisions: `docs/invariants.md`.
 
+### The §7 agent workflow (binding for every change to managed logic)
+
+For ANY requested change touching `domain/`, `adapters/pyscript/`, the YAML
+automations/scripts/templates in this cluster, or the fixtures:
+
+1. Read `docs/subsystems/daylight.md` + the relevant fixtures/tests first.
+2. State the intended behavior and the affected interfaces (which inputs/
+   outputs change — cite the model types).
+3. Inspect device ownership (`docs/invariants.md` §4) before editing — never
+   create a second controller for a device another subsystem owns.
+4. Make the smallest coherent change; keep policy pure (no entity_ids, no
+   services, no I/O, no HA imports in `domain/`).
+5. Update fixtures + tests + the subsystem doc + this skill's affected section
+   together with the change. Add a regression test BEFORE the fix when fixing a
+   bug.
+6. Run the full gate: **`tools/qa.sh`** (ruff + mypy + pytest + summarize
+   consistency). It must be green locally with zero HA access.
+7. Review `git diff` for unrelated changes, regressions, safety implications.
+8. Report: changes, test results, risks, and what a deploy needs.
+
+Ambiguity in requirements/ownership → investigate and document before changing
+behavior. Never silently alter system-wide conventions.
+
+### Managed-logic deploy path (Path E, shadow-first)
+
+- Repo is source of truth for managed logic; VM `/config` for config state.
+- Edit `domain/` + `adapters/pyscript/` locally → `tools/qa.sh` green →
+  `python3 tools/deploy.py` (isacs_rum guard → tar-over-SSH → `pyscript.reload`).
+- Shadow mode (current): adapters write `_ps` twins + log mismatches; they do
+  NOT call services. Ownership flip to the real entity IDs is Phase D.
+
+### Pyscript gotchas (verified 2026-10-25)
+
+- **Native-import idiom — REQUIRED.** To import the pytest-tested domain
+  package as a native module you must `sys.path.insert(0, ...)` +
+  `importlib.invalidate_caches()` (importlib caches a failed dir scan of a new
+  sys.path entry, then later imports fail with `No module named '...'`
+  forever). `allow_all_imports: true` required (`domain`/`sys` are not in
+  `ALLOWED_IMPORTS`). Do NOT put the domain under `/config/pyscript/modules/`
+  — pyscript re-parses that tree with its own AST interpreter (not native;
+  breaks dataclasses/StrEnum/generators).
+- Keep `@time_trigger` / `@state_trigger` decorator call-sites free of
+  generator expressions (pyscript AST gap) — write explicit loops/constants.
+- Config-method: pick ONE of YAML `pyscript:` block vs UI config flow — mixing
+  is forbidden by pyscript and was the Oct-20 root cause. Fallback for the 2.0+
+  decorator subsystem: `legacy_decorators: true` (restart). Debug logger path:
+  `custom_components.pyscript.apps.*: debug`.
+
 - **Quality gate (run before ANY deploy of managed logic):** `tools/qa.sh`
   (from repo root) — ruff + mypy + pytest + `summarize.py` consistency. Zero HA
   access needed; must exit 0. Fast form: `tools/qa.sh fast` (skips summarize).
@@ -771,36 +819,6 @@ Plan: `docs/TESTED_POLICY_PLAN.md`; per-subsystem contract:
 - **Binding invariant (owner):** never trigger any light on in `isacs_rum`
   (`light.isac_tak`, `switch.isac_lekstuga`, bedside) — Isac is asleep. All
   probes/spikes/deploys respect this; the sovrum/isac fades stay pure YAML.
-- **Config-method gotcha (Pyscript, verified 2026-10-20 + docs 2026-10-25):**
-  do NOT mix a `pyscript:` YAML block with a UI config-flow entry — Pyscript
-  ignores the three settings from YAML when added via the UI flow; pick one
-  method. If the 2.0+ decorator subsystem misbehaves, `legacy_decorators: true`
-  is the documented fallback (needs a restart). Debug logger path is
-  `custom_components.pyscript.apps.*: debug` (2.x), not just the parent.
-  Pyscript 2.1.0 supports HA 2026.5+ (we run 2026.10.2).
-- **Pyscript native-module import idiom (verified 2026-10-25):** to import a
-  NATIVE Python package (not pyscript-interpreted) you must use
-  `importlib` + a sys.path insert + **`importlib.invalidate_caches()`** and put
-  the package OUTSIDE `/config/pyscript/modules/`. The `modules/` dir is
-  re-parsed by pyscript's AST interpreter (NOT native — cannot run dataclasses/
-  StrEnum/generators) so it is unsuitable for the pytest-tested domain package.
-  Working idiom at top of a script:
-  ```python
-  import sys, importlib
-  _NATIVE_DOMAIN = "/config/pyscript/native_domain"
-  if _NATIVE_DOMAIN not in sys.path:
-      sys.path.insert(0, _NATIVE_DOMAIN)
-  importlib.invalidate_caches()
-  from domain.daylight import ...   # native, compiled
-  ```
-  Requires `allow_all_imports: true` (config-flow options; `domain`/`sys` are
-  not in `ALLOWED_IMPORTS`). **Why invalidate_caches:** importlib caches the
-  directory listing of a new sys.path entry even on a FAILED import (e.g. files
-  mid-push), so later imports fail with `No module named '...'` indefinitely
-  until the cache is flushed. Pyscript `@pyscript_compile` is per-function only;
-  the native-module path is the way to run C-accelerated/pytest-identical code.
-  Also: keep individual `@time_trigger`/`@state_trigger` decorator call-sites
-  free of generator expressions — write them as explicit loops/constants.
 
 ## How to grow this skill
 
