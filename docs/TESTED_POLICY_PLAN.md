@@ -194,9 +194,14 @@ wasted either way.
 
 **Path E (primary, contingent on A+ green):**
 - Domain ships as **native compiled** modules under `/config/pyscript/
-  native_domain/`, bootstrapped via `sys.path` + `allow_all_imports: true`.
-  Native = full language, compiled speed, and the *same file pytest runs*.
-  Pure stdlib → no VM pip.
+  native_domain/` — NOT `/config/pyscript/modules/` (that tree is re-parsed by
+  pyscript's AST interpreter, which is not native and cannot run dataclasses/
+  StrEnum; verified 2026-10-25). Bootstrapped via `sys.path.insert(0, ...)` +
+  `importlib.invalidate_caches()` + `allow_all_imports: true`. The
+  `invalidate_caches()` is load-bearing: importlib caches a failed directory
+  scan of a new sys.path entry (e.g. files mid-push) and later imports then
+  fail silently. Native = full language, compiled speed, and the *same file
+  pytest runs*. Pure stdlib → no VM pip.
 - Thin pyscript adapters in `/config/pyscript/scripts/daylight.py`:
   `@state_trigger`/`@time_trigger` on the existing entities → gather inputs →
   call domain → call services.
@@ -205,6 +210,11 @@ wasted either way.
   automations/scripts react unchanged; only the *decision origin* moves.
 - Native-module changes are outside pyscript's hot-reload graph → changes need
   `pyscript.reload`/restart on deploy (documented).
+- **Shadow-mode first (done 2026-10-25, Phase C):** adapters write `_ps` twin
+  entities (`sensor.home_status_ps`, `binary_sensor.light_outside_ps`,
+  `sensor.night_lights_ps`) and log mismatches vs the still-live YAML — zero
+  service calls, zero behavior change. Flipping ownership of the real IDs is
+  Phase D.
 
 **Path V (fallback, fully planned):** domain = tested specification; golden
 matrix + Jinja parity harness (sandboxed Jinja2, stubbed `states()`/`is_state()`

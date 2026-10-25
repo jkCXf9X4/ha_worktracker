@@ -1014,3 +1014,29 @@ with HA… don't make the dimmer affect the plug in the living room."
   weekday axis (e.g. Sat after bed → Sun **weekday** 21:00, not weekend 21:30).
   Fixed `domain/daylight/home_status.py::_next_boundary` to mirror that exactly.
   53 tests green; qa.sh green.
+
+## 2026-10-25 — Phase C done: Path E adapters live in shadow mode
+
+- **Binding layer implemented.** The pytest-tested `domain/daylight` now runs
+  on the VM as the decision source for three pyscript adapters — in SHADOW mode:
+  they write `_ps` twin entities and log mismatches, never call services. Zero
+  behavior change; isacs_rum invariant holds by construction.
+- **Layout on VM:** `/config/pyscript/native_domain/domain/daylight/*` (native
+  modules, same files pytest runs) + `/config/pyscript/scripts/{home_status,
+  daylight,night}.py` (thin adapters). `allow_all_imports: true` set via the
+  config-flow options.
+- **Debug knot (subagent isolation):** `import domain` failed with
+  `ModuleNotFoundError` even though `sys.path.append` ran and `allow_all_imports`
+  was live. Root cause: importlib caches a new sys.path entry's directory scan
+  even on a FAILED import (tree was mid-push on first scan), so later imports
+  fail forever. Fix documented in skill: `sys.path.insert(0, path)` +
+  `importlib.invalidate_caches()` before importing. Also learned: pyscript's
+  `modules/` dir is AST-reinterpreted (NOT native) → unusable for the domain
+  package.
+- **Verified live:** `sensor.home_status_ps=sleep` matches `sensor.home_status`;
+  `binary_sensor.light_outside_ps=off` matches live; `sensor.night_lights_ps =
+  computed {utelampa: on, sasong: off}` (dark + no christmas). Native import
+  from disk confirmed. Vm adapter files Md5 == repo.
+- **Tooling:** `tools/deploy.py` — qa.sh gate → isacs_rum AST-code guard
+  (docstrings excluded) → tar-over-SSH → local REST `pyscript.reload`.
+- Diag/probe files removed from VM. Exporter to pick up `/config/pyscript/`.

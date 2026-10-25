@@ -60,15 +60,17 @@ Path V = golden/Jinja-parity verification against live YAML).
   add-on's IP check on pyscript's `services.yaml` loopback default → repo-root
   `.gitallowed` (`ha_config`) unblocked it; exporter pushed `7d694a1`.
   **Decision: Path E.** Bound invariants (isacs_rum, honest-testing) active.
-- ✅ P-B: domain extraction parity + fixture matrices — `home_status.yaml`
-  (13 cases: axes, away, boundaries, custom schedule) + `daylight.yaml`
-  (12 cases: hysteresis dead-zone, threshold edges, unavailable lux) + uniform
-  `{defaults, cases}` matrix loader; **caught + fixed a real parity bug**:
-  `next_wake`/`next_bedtime` re-derive the *next day's* weekday axis when
-  today's boundary has passed (mirrors `template/home_status.yaml`); 53 tests
-  green
-- ⬜ P-C: binding layer — Path E adapters or Path V parity harness
-- ⬜ P-D: `tools/deploy.py` + `tools/probe_vm.py` + rollback ritual
+- ✅ P-C: binding layer — Path E adapters **live in shadow mode**. `domain/
+  daylight` shipped to `/config/pyscript/native_domain/` as native modules +
+  thin pyscript adapters in `/config/pyscript/scripts/` writing `_ps` twins and
+  logging mismatches (no service calls). **Verified live**: home_status_ps ==
+  home_status (sleep), light_outside_ps == light_outside (off), night_lights_ps
+  = {utelampa on, sasong off}; native import confirmed via correct idiom
+  (`sys.path.insert(0)` + `importlib.invalidate_caches()`, `allow_all_imports:
+  true` after options flow). Tools: `tools/deploy.py` (qa → isacs_rum guard →
+  tar-over-SSH → pyscript.reload).
+- ⬜ P-D: ownership flip (`_ps` → real IDs), `tools/probe_vm.py`, rollback
+  ritual, exporter sync of `/config/pyscript/`
 - ⬜ P-E: §7 agent workflow in skill + invariants doc + success-test
 
 **Binding invariant (all workstreams, from owner):** never trigger any light

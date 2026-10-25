@@ -778,6 +778,29 @@ Plan: `docs/TESTED_POLICY_PLAN.md`; per-subsystem contract:
   is the documented fallback (needs a restart). Debug logger path is
   `custom_components.pyscript.apps.*: debug` (2.x), not just the parent.
   Pyscript 2.1.0 supports HA 2026.5+ (we run 2026.10.2).
+- **Pyscript native-module import idiom (verified 2026-10-25):** to import a
+  NATIVE Python package (not pyscript-interpreted) you must use
+  `importlib` + a sys.path insert + **`importlib.invalidate_caches()`** and put
+  the package OUTSIDE `/config/pyscript/modules/`. The `modules/` dir is
+  re-parsed by pyscript's AST interpreter (NOT native — cannot run dataclasses/
+  StrEnum/generators) so it is unsuitable for the pytest-tested domain package.
+  Working idiom at top of a script:
+  ```python
+  import sys, importlib
+  _NATIVE_DOMAIN = "/config/pyscript/native_domain"
+  if _NATIVE_DOMAIN not in sys.path:
+      sys.path.insert(0, _NATIVE_DOMAIN)
+  importlib.invalidate_caches()
+  from domain.daylight import ...   # native, compiled
+  ```
+  Requires `allow_all_imports: true` (config-flow options; `domain`/`sys` are
+  not in `ALLOWED_IMPORTS`). **Why invalidate_caches:** importlib caches the
+  directory listing of a new sys.path entry even on a FAILED import (e.g. files
+  mid-push), so later imports fail with `No module named '...'` indefinitely
+  until the cache is flushed. Pyscript `@pyscript_compile` is per-function only;
+  the native-module path is the way to run C-accelerated/pytest-identical code.
+  Also: keep individual `@time_trigger`/`@state_trigger` decorator call-sites
+  free of generator expressions — write them as explicit loops/constants.
 
 ## How to grow this skill
 
