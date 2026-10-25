@@ -781,3 +781,145 @@ Workspace/repo: documented in the commit message of this same change set.
   `above:`/`below:` gotcha (entity-id-or-float only).
 - Config exported on the VM (`ha apps restart 68413af6_git-exporter`,
   "Exporter finished"). Local `ha_config` clone synced to `720ca7d`.
+
+## 2026-10-24 — Family dashboard: dead `area` cards replaced with real room toggles
+
+Owner report: "the dashboards now show all the areas but I can't do anything
+with them".
+
+- **Root cause (verified in frontend source + live):** in HA 2026.10 the `area`
+  card (`type: area`, `display_type: compact`) no longer renders inline entity
+  chips. It is a static tile (icon + room name); the tile is `interactive=false`
+  unless the card has `tap_action` or card `features`. So every room "card" on
+  Belysning/Utomhus rendered but was a pure dead tile.
+- **Fix (owner chose "show real toggles per room"):** storage dash rebuilt via
+  WS `lovelace/config` → edit → `lovelace/config/save` (`url_path: "lovelace"`,
+  full config payload). All `area` cards replaced with `entities` cards
+  (`show_header_toggle: true`) listing each room's live lights/switches:
+  - Belysning: Entré hall, Kök korridor (l3_1/l3_2), Badrum korridor, Vardagsrum
+    (dimmer livingroom + bokhylla + isac_lekstuga), Sovrum, Isacs rum, Gästrum,
+    Hobbyrum, Kök (p2).
+  - Utomhus: Utebelysning (ute_huvudentre + p11), Uterum (p10); Säsongsbelysning
+    card unchanged.
+- Excluded from room cards (kept in the seasonal/utomhus card instead):
+  `p1_socket` (seasonal "Hörnlampa vardagsrum", often unavailable via Tuya),
+  `p2_socket` is shown (Kök, currently unavailable), TRETAKT child-lock/LED
+  toggles not useful to the family.
+- Exported (`75db10e`), local `ha_config` clone synced. Skill §Dashboard views
+  updated with the area-card gotcha + per-room card layout.
+
+## 2026-10-24 — Room dim build: one dim per room + drill-in pages + plugs-follow-dim
+
+Follow-up to the area-card fix. Owner requirements: (1) overall dashboard shows
+ONE dim per room, opening a room gives detailed per-entity control; (2) when a
+room is dimmed above ~75% its plugs turn on, below 75% (or room off) they turn
+off, and plug presses never influence the lights.
+
+- **Room dims = `light.group` entities** (new `/config/light.yaml`, added
+  `light: !include light.yaml` to configuration.yaml; needed `ha core restart`):
+  `light.vardagsrum` = dimmer_fixed_livingroom_light + bokhylla_h_light;
+  `light.badrum_korridor` = korridor_tak + color_temperature_light_1;
+  `light.kok_korridor` = l3_1 + l3_2. Single-light rooms and switch-only rooms
+  have no group (their one light / switch is the room control). Verified in core
+  source (`group/light.py`): `turn_on(brightness=X)` forwards the same level to
+  every member; group reports mean brightness. Friendly names/areas set via
+  entity-registry update (Kök korridor got the ö back).
+- **Dashboard → overview + subviews** (`lovelace/config/save`): Belysning is now
+  Automatik card + a 2-col grid of room `tile` cards — each tile is the room's
+  light/group with a `light-brightness` slider (the one dim per room) and
+  `tap_action: navigate /lovelace/rum-*`. **11 hidden subviews** (`subview:
+  true`, `back_path: /lovelace/belysning`) hold the room's full per-entity
+  `entities` card — the actual "open it up → all room functions". Subview is a
+  first-class view flag (used by the Areas dashboard strategy), so no tab-bar
+  clutter. Utomhus/historik/schema untouched.
+- **Plugs follow room dim (75%)** — `automations/plug_dim.yaml`
+  (`plug_dim_vardagsrum/isacs_rum/gastrum`, alias-slugged entity ids) →
+  `script.plug_follow_room_dim` (fields `room_light` + `plugs`, `if` template
+  `states == on AND brightness > 191` → switch.turn_on, else turn_off).
+  Plug-ins: Vardagsrum→isac_lekstuga, Isacs→p6, Gästrum→laslampa. One-way only
+  (nothing triggers on the plugs). `script.reconcile_all` extended with ×3
+  plug_follow calls for boot convergence. p6 note: family had p6 on with the
+  room off — the new rule (room off ⇒ plug off) turned it off after restart;
+  that's the requested behavior.
+- **Found + fixed a HA gotcha:** light-groups fire several `brightness` events
+  per dim change (members update async); default automation `mode: single`
+  dropped the up-dim run (`failed_single` in `trace/list`) so the plug missed
+  turning on. Fix: `mode: restart` on the plug_dim automations + trigger =
+  `state` `attribute: brightness` (+ `to: "off"`). Verified live: dim 120→plug
+  off, 250→plug on, room off→plug off, on@250→plug on, manual plug press leaves
+  the room light untouched. Also purged the leftover
+  `automation.probe_dimmer_triggers` orphan from the morning's test automation.
+- Exported `eeb1e8b` + `a8b6b6b` (also added `config/.gitignore` excluding
+  `.ha_run.lock`; deleted the transient backup dir that got exported). Local
+  `ha_config` clone synced. Skill §Dashboard/§Automations/§Gotchas updated.
+  Post-test house state left consistent with the rule (vardagsrum 250/lekstuga
+  on; gastrum/isac off + their plugs off).
+
+## 2026-10-24 (late) — Fix: plugs flapped/blinked when the room dim hovered near 75 %
+
+Owner report: "when I turn the livingroom dimmer on the bokhylla is blinking".
+Diagnosis (live event capture + state_changed trace across the vardagsrum
+group members): the plug rule acted, but turning the room dim near 75 % made
+the plug flap. The Sunricher HK-SL-DIM-EU-A wall dimmer
+(`light.dimmer_fixed_livingroom_light`, a `light.vardagsrum` member) **bounced
+~±40–80 brightness levels around the commanded value** (e.g. 210 → 128 → 210),
+so the group `brightness` kept crossing the single 191 threshold → the plug
+automation re-fired on each crossing → the plugged lamp blinked. (The family's
+"blinking" lamp was `switch.isac_lekstuga` following the room; bokhylla itself
+was not being commanded directly.)
+- **Fix**, two layers, exported `478c962`:
+  1. `for: "00:00:03"` debounce on the `attribute: brightness`/`to: "off"`
+     triggers — the rule only acts once the level has settled.
+  2. **Hysteresis** in `script.plug_follow_room_dim` (same idea as the
+     outside-light lux thresholds): plug ON at brightness > 209 (82 %), OFF at
+     < 173 (68 %) or room off, HOLD between — so parking the room at ~75 %
+     can't flap the plug.
+- Verified live on `light.vardagsrum`: 220→on, 180→hold(on), 160→off,
+  190→hold(off), 230→on. Skill §Plugs-follow updated with the dimmer-bounce +
+  failed_single + hysteresis-debounce learnings. (Debug scripts in
+  `/tmp/opencode/reproduce_dimmer.py`, `reproduce_group.py`.)
+
+## 2026-10-24 (late) — Isacs rum excluded from the dim/plug rules (owner request)
+
+- Deleted `automation.plug_dim_isacs_rum` (p6 no longer follows `light.isac_tak`
+  dim) and removed its `script.reconcile_all` call; purged the orphan registry
+  entity. Active rooms now: Vardagsrum (isac_lekstuga) + Gästrum (laslampa).
+  Exported `76d8c47`; skill §Plugs-follow updated.
+
+## 2026-10-24 (late) — Vardagsrum blink: Sunricher dimmer pulled out of the room dim
+
+Owner: "when I turn the livingroom/manual dimmer on the bokhylla blinks … it's
+blinking all the time now … the plug seems to work but the bokhylla has
+problems." Diagnostics (event capture + live state polls): with the Sunricher
+wall dimmer as a member of `light.vardagsrum`, the room dim commanded the
+Sunricher (relaying phase-cut dimmer) which **bounced ±40–80 brightness levels
+around the setpoint**, re-triggering the plug rule and beating on the bookshelf
+circuit — bokhylla blinked, and the physical knob appeared dead. HA state was
+stable during the "blinking all the time" reports, pointing to a physical/load
+interaction rather than a logic loop.
+- **Fix (inverted membership):** `light.vardagsrum` group now contains ONLY
+  `light.bokhylla_h_light`. The Sunricher (`light.dimmer_fixed_livingroom_light`)
+  is out of the room dim entirely — the physical knob remains pure manual for
+  its own fixture. Room dim (dashboard tile) drives bokhylla cleanly; plug rule
+  unchanged (`room_light: light.vardagsrum` still valid). Applied via
+  `light.yaml` + `group.reload` (no restart). Verified: 220→isac on, 160→isac
+  off, restored 254 — dimmer untouched throughout. Exported `f9b0fe5`. Skill
+  §Room dimming updated with the "Sunricher stays out of room groups" rule.
+- Note: if bokhylla still blinks when the physical knob is used, that is likely
+  electrical (dimmer circuit feeding the driver) — physical wiring, not config.
+
+## 2026-10-25 — Dimmer reconnected to HA; living-room plug decoupled from dim
+
+Owner: "connect the dimmer switch back into the living room… use the dimmer
+with HA… don't make the dimmer affect the plug in the living room."
+- `light.vardagsrum` group = {dimmer_fixed_livingroom_light, bokhylla_h_light}
+  again (room slider / HA drives the Sunricher dimmer).
+- Deleted `automation.plug_dim_vardagsrum` + its `reconcile_all` call →
+  `switch.isac_lekstuga` no longer follows the dim at all (fully manual; stays
+  well decoupled from the wall dimmer). Purged registry orphans. Only Gästrum
+  (laslampa) remains on the plug rule. Exported `fb6d33e`.
+- **Hardware finding:** `light.bokhylla_h_light` (TRADFRI Driver 30W) now blinks
+  AND ignores brightness commands (stuck on@254; direct `light.turn_on` to 180
+  does nothing). Core log clean, ZHA device available, HA state stable during
+  persistent blinking → the driver/bulb itself is failing. Not config; family
+  to reseat/replace. Skill §Room dimming + §Plugs-follow updated.

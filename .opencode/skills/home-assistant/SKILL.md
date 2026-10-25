@@ -203,17 +203,18 @@ automations + schedule helpers. Migration design + P4 requirements: see
   readiness gate **`binary_sensor.ha_ready`** (`template/ha_ready.yaml`, derived
   from `sensor.uptime` ≥2 min; replaced the hand-rolled `input_boolean.ha_started`
   + `00_startup_grace.yaml`, retired 2026-10-24).
-- **9 automation entities from 7 YAML files** across `/config/automations/`
+- **12 automation entities from 8 YAML files** across `/config/automations/`
   (include_dir_merge_list): boot_reconcile, ceiling_lights, night_lights
   (incl. the christmas-sockets sync), locks, room_schedules, hue_dimmer_isacs,
-  styrbar_lekstuga. **Boot reconciliation is ONE automation**
+  styrbar_lekstuga, **plug_dim** (2026-10-24). **Boot reconciliation is ONE automation**
   (`automations/boot_reconcile.yaml`): `binary_sensor.ha_ready -> on` →
   `script.reconcile_all` (replays uteljus_sync → ceiling_lights_sync →
-  lock_by_status; each child is self-gated so paused behaviours are skipped).
+  lock_by_status **→ plug_follow_room_dim ×3**; each child is self-gated so
+  paused behaviours are skipped).
   **Do NOT add `ha_ready -> on` triggers to new automation files** — extend
   `script.reconcile_all` instead. The daylight flag is a template and needs no
   boot re-sync.
-- **9 automation entities + 12 scripts, 0 unavailable** (2026-10-24 late):
+- **12 automation entities + 13 scripts, 0 unavailable** (2026-10-24 late):
   registry renames `binary_sensor.light_outside_daylight_flag` →
   `binary_sensor.light_outside` and `script.las_vid_hemmastatus_gate` →
   `script.lock_by_status`; purged the `input_boolean.light_outside`,
@@ -221,6 +222,24 @@ automations + schedule helpers. Migration design + P4 requirements: see
   **GOTCHA:** a template sensor's entity_id follows its NAME (not the
   key/`unique_id`) — rename in the entity registry, exactly as was done for
   `binary_sensor.ha_ready`.
+- **Plugs follow room dim (75%) — `automations/plug_dim.yaml` + `script.plug_follow_room_dim`**
+  (2026-10-24): **active room = Gästrum (laslampa_only).** Vardagsrum
+  (isac_lekstuga) EXCLUDED 2026-10-24/25 (owner: "don't make the dimmer affect
+  the plug in the living room") and Isacs (p6) excluded earlier — both plugs
+  are fully manual. One-way rule with **hysteresis**: room dim `on` + brightness
+  > 209 (82 %) → plugs ON; < 173 (68 %) or room off → OFF; between → plug keeps
+  its state. Plug presses never touch the room lights (no trigger watches the
+  plugs). Boot reconcile extends `script.reconcile_all`.
+  **GOTCHAS (verified 2026-10-24):** (1) light-groups emit several `brightness`
+  events per dim change (members respond async) — default automation
+  `mode: single` DROPS the later run (`failed_single` in `trace/list`) → the
+  plug can miss turning on; use `mode: restart`. (2) The Sunricher HK-SL-DIM-EU-A
+  wall dimmer (`light.dimmer_fixed_livingroom_light`) **bounces ~±40–80
+  brightness levels around the setpoint** when commanded, so a single 75 %
+  threshold alone makes the plug flap/blink near the boundary → keep the
+  hysteresis band AND add a `for: 3s` debounce on the `attribute: brightness`
+  triggers so the plug only acts after the level has settled. Trigger =
+  `state` `attribute: brightness` + `to: "off"`, both with `for`.
 - **Scenes removed 2026-10-23** — `scenes.yaml` deleted: the 2 static scenes
   duplicated the taklampa/utelampa labels 1:1 and scenes can't target labels.
   Replaced by label-driven scripts (`script.taklampa_pa` = taklampa on,
@@ -308,9 +327,37 @@ automations + schedule helpers. Migration design + P4 requirements: see
   YAML `script:` objects have NO top-level `condition` key (HA rejects it:
   `not a valid option at 'condition'` and disables the script) — use a leading
   `- if:` `/` `then:` sequence item, or a `choose` with `default: []`.
-- Dashboard views (2026-10-23): overview, belysning (Automatik card + 9 area
-  cards), utomhus (2 areas + Säsongsbelysning = p10/p1), historik, schema.
-  Energi view removed (had only the dead `sensor.p4_power`).
+- Dashboard views (2026-10-24): overview, **belysning** (Automatik card + a
+  2-col grid of room **tiles** — one per room, each a `tile` card on the room's
+  light/light-group with a `light-brightness` slider = "one dim per room", and
+  `tap_action: navigate` into that room's hidden **subview**), utomhus
+  (Utebelysning/Uterum entity cards + Säsongsbelysning = p10/p1), historik,
+  schema. Energi view removed (had only the dead `sensor.p4_power`).
+  **Room dimming = `light.group` entities** (YAML `light: - platform: group`
+  in `/config/light.yaml`, needs core restart to load): `light.vardagsrum`
+  (dimmer_fixed_livingroom_light + bokhylla_h_light — the Sunricher wall dimmer
+  is IN the group again since 2026-10-24/25, used via HA; **isac_lekstuga is
+  NOT coupled to the dim**, owner decision), `light.badrum_korridor`
+  (korridor_tak + color_temperature_light_1), `light.kok_korridor` (l3_1 +
+  l3_2). Group `turn_on(brightness=X)` sends the SAME brightness to every
+  member; reported brightness = mean of members. **GOTCHA: the Sunricher
+  HK-SL-DIM-EU-A bounces ±40–80 around a commanded level when driven quickly —
+  keep it OUT of plug-follow triggers or debounce them (`for: 3s`).** Single-light
+  rooms (hall/sovrum/isacs/gästrum/utebelysning) have no group — their single
+  light is the room dim. Switch-only rooms (kök/hobbyrum/uterum) get plain
+  toggles (nothing to dim). **NOTE: `light.bokhylla_h_light` (TRADFRI Driver
+  30W) as of 2026-10-25 blinks and IGNORES brightness commands (stuck @254) —
+  hardware failure of the driver/bulb, not config; family to replace/reseat.**
+  **Room detail = hidden subviews** (`subview: true` + `back_path:
+  /lovelace/belysning`, paths `rum-*`) — one per room with the room's full
+  `entities` card, reached only via the overview tile (hidden from the tab bar).
+  **GOTCHA (2026-10-24):** in HA 2026.10 the `area` card (`type: area`,
+  `display_type: compact`) NO LONGER lists entities inline — it renders a static
+  tile (icon + room name) with `interactive=false` unless it has `tap_action` or
+  `card features`. It looks like a control but tapping does nothing. The family
+  dashboard was rebuilt with `entities` cards per room instead (storage dash,
+  `lovelace/config` + `lovelace/config/save`, full config payload, `url_path:
+  "lovelace"`; WS ids must strictly increase).
 - ZHA remote bindings are **blueprint instances** (added 2026-10-23):
   `automations/hue_dimmer_isacs.yaml` + `styrbar_lekstuga.yaml` use
   `blueprints/automation/zha_remote_lights.yaml` / `zha_remote_switch.yaml`
