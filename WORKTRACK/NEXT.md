@@ -5,7 +5,7 @@ Forward-looking tracker. Ops how-to lives in the skill
 "where are we, what's next". Completed work lives in `WORKTRACK/archive/changelog.md`.
 
 Snapshot owner: build agent. Update after every working session.
-Last updated: 2026-10-25
+Last updated: 2026-10-26
 
 ## Phase state
 
@@ -74,6 +74,23 @@ Path V = golden/Jinja-parity verification against live YAML).
 - ✅ P-E: §7 agent workflow + deploy-path + pyscript-gotchas encoded into the
   skill; plan doc marks the §10 success-test as the Phase D acceptance demo.
   (Run the success test when D lands.)
+- 🔨 P-F: **frontend pairing — Python backend ↔ family chat agent**
+  (designed 2026-10-26, `docs/FRONTEND_PAIRING.md`). Principle: frontend can
+  *reason with* and *request intent through* the policy, never act as/past it.
+  1. **`config_tools__policy_query`** — read-only oracle tool importing the
+     same `/config/pyscript/native_domain` files (verified sys.path +
+     `invalidate_caches` idiom), md5-drift-guarded re-import, optional input
+     overrides → what-ifs ("vad händer om jag pausar?"); no services, no
+     admin gate.
+  2. **Exposed wrapper scripts** for intent: `script.toggle_christmas_lights`,
+     `script.pause_{nattlampor,taklampor,las}` → flip documented helpers,
+     native ActionTool (`stop` + `response_variable`); the three `automatik_*`
+     toggles themselves stay unexposed.
+  3. **Owner decisions:** keep Isac's 3 lamps exposed to the chat agent
+     (family manual intent allowed; invariant is automation-scoped) · intent
+     channel = wrapper scripts, NOT a broadened `call_service` allowlist.
+  Red lines unchanged: no agent write to `/config/pyscript/`/`domain/`, no
+  direct `label.utelampa`/`label.sasong` control, no isacs automation path.
 
 **Binding invariant (all workstreams, from owner):** never trigger any light
 on in `isacs_rum` (`light.isac_tak`, `switch.isac_lekstuga`, bedside) — Isac is
